@@ -243,7 +243,7 @@ extern "C" void initialize(char * folder)
             UINT64 hash;
             for (BYTE x = SEARCH; x <= MODERN; x++) {
                 char* token = (char*)lex;
-                switch (x) {
+                if (*token != 0) switch (x) {
                     case SEARCH:    hash = Hash64(token); 
                                     reverseSearch.insert({ hash, lexnum });
                                     break;
@@ -353,57 +353,57 @@ extern "C" void initialize(char * folder)
         }
     }
 }
-static const UINT64 BoV = HashTrivial("BoV");
-static const UINT64 EoV = HashTrivial("EoV");
-static const UINT64 BoC = HashTrivial("BoC");
-static const UINT64 EoC = HashTrivial("EoC");
-static const UINT64 BoB = HashTrivial("BoB");
-static const UINT64 EoB = HashTrivial("EoB");
+static const UINT64 BoV = Hash64("BoV");
+static const UINT64 EoV = Hash64("EoV");
+static const UINT64 BoC = Hash64("BoC");
+static const UINT64 EoC = Hash64("EoC");
+static const UINT64 BoB = Hash64("BoB");
+static const UINT64 EoB = Hash64("EoB");
 
 std::unordered_map<UINT64, BYTE>* getSlashBoundaryMap() {
     if (slashBoundaries.count(BoV) == 0) {
-        slashBoundaries.insert({ HashTrivial("BoV"), 0x20 });
-        slashBoundaries.insert({ HashTrivial("EoV"), 0x30 });
-        slashBoundaries.insert({ HashTrivial("BoC"), 0x60 });
-        slashBoundaries.insert({ HashTrivial("EoC"), 0x70 });
-        slashBoundaries.insert({ HashTrivial("BoB"), 0xE0 });
-        slashBoundaries.insert({ HashTrivial("EoB"), 0xF0 });
+        slashBoundaries.insert({ BoV, 0x20 });
+        slashBoundaries.insert({ EoV, 0x30 });
+        slashBoundaries.insert({ BoC, 0x60 });
+        slashBoundaries.insert({ EoC, 0x70 });
+        slashBoundaries.insert({ BoB, 0xE0 });
+        slashBoundaries.insert({ EoB, 0xF0 });
     }
     return &slashBoundaries;
 }
 std::unordered_map<UINT64, BYTE>* getSlashPuncMap() {
-    if (slashPunc.count(HashTrivial("!")) == 0) {
-        slashPunc.insert({ HashTrivial("!"), 0x80 });
-        slashPunc.insert({ HashTrivial("?"), 0xC0 });
-        slashPunc.insert({ HashTrivial("."), 0xE0 });
-        slashPunc.insert({ HashTrivial("-"), 0xA0 });
-        slashPunc.insert({ HashTrivial(";"), 0x20 });
-        slashPunc.insert({ HashTrivial(","), 0x40 });
-        slashPunc.insert({ HashTrivial(":"), 0x60 });
-        slashPunc.insert({ HashTrivial("'"), 0x10 });
-        slashPunc.insert({ HashTrivial(")"), 0x0C });
-        slashPunc.insert({ HashTrivial("("), 0x04 });
-        slashPunc.insert({ HashTrivial("italics"), 0x02 });
-        slashPunc.insert({ HashTrivial("jesus"), 0x01 });
+    if (slashPunc.count(Hash64("!")) == 0) {
+        slashPunc.insert({ Hash64("!"), 0x80 });
+        slashPunc.insert({ Hash64("?"), 0xC0 });
+        slashPunc.insert({ Hash64("."), 0xE0 });
+        slashPunc.insert({ Hash64("-"), 0xA0 });
+        slashPunc.insert({ Hash64(";"), 0x20 });
+        slashPunc.insert({ Hash64(","), 0x40 });
+        slashPunc.insert({ Hash64(":"), 0x60 });
+        slashPunc.insert({ Hash64("'"), 0x10 });
+        slashPunc.insert({ Hash64(")"), 0x0C });
+        slashPunc.insert({ Hash64("("), 0x04 });
+        slashPunc.insert({ Hash64("italics"), 0x02 });
+        slashPunc.insert({ Hash64("jesus"), 0x01 });
     }
     return &slashPunc;
 }
 std::unordered_map<UINT64, BYTE>* getPoundWordSuffixMap() { // examples: #kjv[1] #av[1] #exact[1] #avx[2] #modern[2] #any[3] #fuzzy[3]
-    if (poundWordSuffix.count(HashTrivial("#av")) == 0) {
-        poundWordSuffix.insert({ HashTrivial("#av"), 1 });
-        poundWordSuffix.insert({ HashTrivial("#kjv"), 1 });
-        poundWordSuffix.insert({ HashTrivial("#exact"), 1 });
-        poundWordSuffix.insert({ HashTrivial("#avx"), 2 });
-        poundWordSuffix.insert({ HashTrivial("#modern"), 2 });
-        poundWordSuffix.insert({ HashTrivial("#any"), 3 });
-        poundWordSuffix.insert({ HashTrivial("#fuzzy"), 3 });
+    if (poundWordSuffix.count(Hash64("#av")) == 0) {
+        poundWordSuffix.insert({ Hash64("#av"), 1 });
+        poundWordSuffix.insert({ Hash64("#kjv"), 1 });
+        poundWordSuffix.insert({ Hash64("#exact"), 1 });
+        poundWordSuffix.insert({ Hash64("#avx"), 2 });
+        poundWordSuffix.insert({ Hash64("#modern"), 2 });
+        poundWordSuffix.insert({ Hash64("#any"), 3 });
+        poundWordSuffix.insert({ Hash64("#fuzzy"), 3 });
     }
     return &poundWordSuffix;
 }
 const BYTE DIFF = 1;
 std::unordered_map<UINT64, BYTE>* getPoundWordlessMap() {   // examples: #diff
-    if (poundWordless.count(HashTrivial("#diff")) == 0) {
-        poundWordSuffix.insert({ HashTrivial("#diff"), DIFF });
+    if (poundWordless.count(Hash64("#diff")) == 0) {
+        poundWordSuffix.insert({ Hash64("#diff"), DIFF });
     }
     return &poundWordless;
 }

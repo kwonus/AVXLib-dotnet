@@ -6,12 +6,13 @@
 #include <string>
 
 #include <unordered_map>
+#include <fivebitencoding.h>
 
 using namespace std;
 
-static std::unordered_map<UINT64, char*>  hashToString;
+static std::unordered_map<UINT64, const char*>  hashToString;
 
-char* getHashedString(UINT64 hash) {
+const char* getHashedString(UINT64 hash) {
 	return hashToString.count(hash) != 0 ? hashToString.at(hash) : NULL;
 }
 
@@ -63,7 +64,7 @@ static inline std::string trim_copy(std::string s) {
 }
 
 // For Part-of-Speech:
-UINT32 EncodePOS(char* input7charsMaxWithHyphen) { // input string must be ascii
+UINT32 EncodePOS(const char* input7charsMaxWithHyphen) { // input string must be ascii
 	auto len = strlen(input7charsMaxWithHyphen);
 	if (len < 1 || len > 7)
 		return 0;
@@ -103,7 +104,7 @@ UINT32 EncodePOS(char* input7charsMaxWithHyphen) { // input string must be ascii
 		position >>= 5;
 	}
 	for (auto i = 0; i < len; i++) {
-		char letter = buffer[i] & 0x1F;
+		char letter = char(buffer[i] & 0x1F);
 		if (letter == 0)
 			break;
 
@@ -143,35 +144,45 @@ char* DecodePOS(UINT32 encoding) {
 	decoded[index] = 0;
 	return decoded;
 }
-// For Part-of-Speech:
-UINT64 Hash64(char* token) { // input string must be ascii lowercase; hyphens are ignored (reliability in question when string exceeds length 10
-	auto len = strlen(token);
-	auto input = trim_copy(token);
+// input string must be ascii lowercase; hyphens are ignored
+// - reliability in question when string exceeds length 8 or 12:
+// - size <= 8: Entire ascii character set, but ONLY ascii [0x7F]
+// - size <= 12: Lowercase-ascii-lettes-only [a-z] preserved using 5-bit encoding
+// - size <= 16: values for Digital-AV lexicon ALWAYS hash uniquely using 3-bit encoding, but algorithm tuned for that lexicon
+// - size >= 17: NOT TESTED on strings larger than 16! Validate on your daya or collisions handled in your custom code
+UINT64 Hash64(const char* token) { 
+	if (token == NULL)
+		return -1;
 
-	UINT64 A, E, I, O, U;
-	A = E = I = O = U = 0;
-	len = input.length();
+	while (*token == ' ' || *token == '\t')
+		token++;
+
+	auto len = strlen(token);
+	if (len <= 8) {
+		UINT64 hash = Encode(token);
+		if ((hash & UseFiveBitEncodingOrThreeBitHash) == 0)
+			return hash;
+	}
+	UINT64 hash = UseFiveBitEncodingOrThreeBitHash; // hi-order bit set marks 5-bit or 3-bit encoding
+
 	int ignore = 0; // e.g. hyphens
 	for (auto i = 0; i < len; i++) {
-		auto c = tolower(input[i]);
+		auto c = tolower(token[i]);
 		if (c < 'a' || c > 'z')
 			ignore++;
 	}
-
-	UINT64 hash = 0;
-
-	if (len-ignore <= 10)	// 5-bit-encoding
+	if (len-ignore <= 12)	// 5-bit-encoding
 	{
-		char buffer[10];	// 10x 5bit characters
+		char buffer[12];	// 12x 5-bit characters
 		ignore = 0;
 		for (auto i = 0; i < len; i++) {
-			auto c = tolower(input[i]);
+			auto c = tolower(token[i]);
 			if (c >= 'a' && c <= 'z')
 				buffer[i-ignore] = c;
 			else
 				ignore++;
 		}
-		auto position = (UINT64)0x1 << (64 - (13 + 1));
+		auto position = FiveBitEncodedFirstLetter;
 		len -= ignore;
 		for (auto i = 0; i < len; i++) {
 			char letter = buffer[i] & 0x1F;
@@ -184,58 +195,61 @@ UINT64 Hash64(char* token) { // input string must be ascii lowercase; hyphens ar
 	}
 	else // 3-bit hashes
 	{
+		UINT64 A, E, I, O, U;
+		A = E = I = O = U = 0;
+
 		BYTE buffer[16];	// 16x 3bit hashes
 		ignore = 0;
 
 		for (auto i = 0; i < len; i++) {
-			if (i-ignore >= 16)
+			if (i - ignore >= 16)
 				break;
-			auto c = tolower(input[i]);
+			auto c = tolower(token[i]);
 			switch (c) {
-				// vowel = 1;
+					// vowel = 1;
 				case 'a':	if (A < 3) A++;
-							buffer[i-ignore] = 0;
+							buffer[i - ignore] = 0;
 							continue;
 				case 'e':	if (E < 3) E++;
-							buffer[i-ignore] = 0;
+							buffer[i - ignore] = 0;
 							continue;
 				case 'i':	if (I < 3) I++;
-							buffer[i-ignore] = 0;
+							buffer[i - ignore] = 0;
 							continue;
 				case 'o':	if (O < 3) O++;
-							buffer[i-ignore] = 0;
+							buffer[i - ignore] = 0;
 							continue;
 				case 'u':	if (U < 3) U++;
-							buffer[i-ignore] = 0;
+							buffer[i - ignore] = 0;
 							continue;
 				case 'b':
 				case 'd':
 				case 'f':
 				case 'g':
-				case 'p':	buffer[i-ignore] = 2;
+				case 'p':	buffer[i - ignore] = 2;
 							continue;
 
 				case 'h':
 				case 'y':
 				case 'r':
 				case 'j':
-				case 'l':	buffer[i-ignore] = 3;
+				case 'l':	buffer[i - ignore] = 3;
 							continue;
 				case 'w':
 				case 'v':
 				case 'm':
-				case 'n':	buffer[i-ignore] = 4;
+				case 'n':	buffer[i - ignore] = 4;
 							continue;
 				case 'x':
-				case 'z':	buffer[i-ignore] = 5;
+				case 'z':	buffer[i - ignore] = 5;
 							continue;
 				case 'q':
 				case 'k':
-				case 'c':	buffer[i-ignore] = 6;
+				case 'c':	buffer[i - ignore] = 6;
 							continue;
-				case 't':	buffer[i-ignore] = 7;
+				case 't':	buffer[i - ignore] = 7;
 							continue;
-				case 's':	buffer[i-ignore] = 1;
+				case 's':	buffer[i - ignore] = 1;
 							continue;
 				default:	ignore++;
 			}
@@ -243,83 +257,151 @@ UINT64 Hash64(char* token) { // input string must be ascii lowercase; hyphens ar
 		len -= ignore;
 		if (len > 16)
 			len = 16;
-		UINT64 bitcnt = 61; // first 3 bits
-		UINT64 bitval = len - 9;
-		hash = bitval << bitcnt;
-		bitcnt -= 2;
-		hash += (A << bitcnt); // next 2-bits
-		bitcnt -= 2;
-		hash += (E << bitcnt); // next 2-bits
-		bitcnt -= 2;
-		hash += (I << bitcnt); // next 2-bits
-		bitcnt -= 2;
-		hash += (O << bitcnt); // next 2-bits
-		bitcnt -= 2;
-		hash += (U << bitcnt); // next 2-bits
 
-		auto position = (UINT64)0x1 << (64 - (13 + 1));
+		hash += (A * ThreeBitHashACountLowBit);
+		hash += (E * ThreeBitHashECountLowBit);
+		hash += (I * ThreeBitHashICountLowBit);
+		hash += (O * ThreeBitHashOCountLowBit);
+		hash += (U * ThreeBitHashUCountLowBit);
+
+		auto position = ThreeBitEncodedFirstConsonant;
 		for (auto i = 0; i < len; i++) {
 			BYTE letter = buffer[i] & 0x07;
 			hash |= (UINT64)letter * position;
 			position >>= 3;
 		}
-	}
-	if (hashToString.count(hash) != 0) {	// don't allow collisions
-		char* previous = hashToString.at(hash);
-		int t, p;
-		for (t = p = 0; token[t] != 0 && previous[p] != 0; t++, p++) {
-			if (token[t] == '-' && token[++t] == 0)
-				return 0;
-			if (previous[p] == '-' && previous[++p] == 0)
-				return 0;
-			if (tolower(token[t]) != tolower(previous[p]))
-				return 0;
+		if (hashToString.count(hash) != 0) {	// don't allow collisions // validate!!!
+			const char* previous = hashToString.at(hash);
+			int t, p;
+			for (t = p = 0; token[t] != 0 && previous[p] != 0; t++, p++) {
+				while (token[t] == '-')
+					if (token[++t] == 0)
+						return 0;
+				while (previous[p] == '-')
+					if (previous[++p] == 0)
+						return 0;
+				if (tolower(token[t]) != tolower(previous[p]))
+					return 0;
+			}
 		}
+		else hashToString.insert({ hash, token });
 	}
-	else hashToString.insert({ hash, token });
 	return hash;
 }
-UINT64 HashTrivial(char* c) { // input string must be ascii and cannot exceed 8
+UINT64 Encode(const char* c, bool normalize) { // input string must be ascii and cannot exceed 8
 	UINT64 hash = 0;
 	char* chash = (char*)&hash;
 
 	int len = strlen(c);
-	if (len == 1)
+	if (len > 0)
 	{
-		chash[sizeof(UINT64)-1] = tolower(*c);	// this way, the UINT64 will equal the byte value precisely
-	}
-	else if (len > 0)
-	{
-		for (int i = 0; i < sizeof(UINT64); i++) // sizeof(UINT64) == 8
-			*chash++ = tolower(*c++);
+		for (int i = 0; i < sizeof(UINT64) && *c != char(0); i++) // sizeof(UINT64) == 8
+			*chash++ = (normalize ? tolower(*c++) : *c++);
 	}
 	return hash;
 }
-int getHashedTrivialString(UINT64 hash, char* buffer, int len) {
-	char* chash = (char*)&hash;
+UINT64 Encode(const char* c) { // input string must be ascii and cannot exceed 8
+	return Encode(c, true);
+}
+int fivebitencodedStrlen(UINT64 hash) {
+	if ((hash & UseFiveBitEncodingOrThreeBitHash) == 0)
+		return -1;
+	if ((hash & ThreeBitHashLengthMarker) != 0)
+		return -1;
 
-	if (*chash == 0) {
-		if (buffer != NULL && len >= 2) {
-			*buffer++ = chash[sizeof(UINT64) - 1];
-			*buffer = 0;
-			return 1;
-		}
-	}
-	else {
-		int i;
-		for (i = 0; i < len; i++)
-		{
-			*buffer++ = *chash;
-			if (*chash++ == 0)
-				return i;
-		}
-		if (i < len)
-		{
-			*buffer = 0;
+	UINT64 bits = 0x1F * FiveBitEncodedFirstLetter;
+	for (auto i = 0; i < 12; i++)
+		if ((hash & bits) == 0)
 			return i;
+
+	return 12;
+}
+int threebitencodedStrlen(UINT64 hash) {
+	if ((hash & UseFiveBitEncodingOrThreeBitHash) == 0)
+		return -1;
+	if ((hash & ThreeBitHashLengthMarker) != 0)
+		return -1;
+
+	auto len = ThreeBitHashLengthMarker & hash;
+	len /= ThreeBitHashLengthLowBit;
+
+	return (int) len;
+}
+int DecodeFiveBitHash(UINT64 hash, char* buffer, int len) {
+	if (buffer == NULL || len < 1)
+	{
+		return -1;
+	}
+	if ((hash & UseFiveBitEncodingOrThreeBitHash) == 0)
+	{
+		*buffer = 0;
+		return -1;
+	}
+	int clen = fivebitencodedStrlen(hash);
+
+	if (clen+1 > len)
+		return 0-(1+clen);
+
+	auto position = FiveBitEncodedFirstLetter;
+	for (auto i = 0; i < clen; i++) {
+		UINT64 letter = (hash & (position * 0x1F)) / position;
+		*buffer++ = 'a' + (char) (letter - 1);
+		position >>= 5;
+	}
+	*buffer = 0;
+
+	return 1 + clen;
+}
+int DecodeAscii(UINT64 hash, char* buffer, int len) {
+	if ((hash & UseFiveBitEncodingOrThreeBitHash) != 0)
+		return 0;
+
+	char* chash = (char*)&hash;
+	//	bytes are left-justified
+	//
+	int clen = (chash[7] == 0) ? strlen(chash) : 8;
+	if (buffer != NULL && len >= clen+1) {
+		int i;
+		for (i = 0; i < clen; i++)
+			*buffer++ = *chash++;
+		*buffer = 0;
+		return clen+1;
+	}
+	return 0 - (clen+1);
+}
+const char* LookupThreebitBitHash(UINT64 hash) {
+	if (hashToString.count(hash) != 0)
+		return hashToString.at(hash);
+
+	return NULL;
+}
+// Return strlen+1 if successful
+// Return (0-strlen+1) if unsuccessful (ussually len is not long enough)
+// Return 0 if not decodable or null
+int Decode(UINT64 hash, char* buffer, int len) {
+	if ((hash & UseFiveBitEncodingOrThreeBitHash) == 0)
+		return DecodeAscii(hash, buffer, len);
+
+	if ((hash & ThreeBitHashLengthMarker) == 0)
+		return DecodeFiveBitHash(hash, buffer, len);
+
+	const char* result = LookupThreebitBitHash(hash);
+	int actual = result != NULL ? 1 + strlen(result) : 0;
+	if (buffer != NULL && len >= 1) {
+		if (result != NULL) {
+			if (actual < len) {
+				strcpy(buffer, result);
+				return actual;
+			}
+			*buffer = 0;
+			return 0 - actual;
+		}
+		else {
+			*buffer = 0;
+			return 0;
 		}
 	}
-	return -1;
+	else return 0 - actual;
 }
 
 // These are no longer used [created for Z-08 / deprecated in Z-14 ]

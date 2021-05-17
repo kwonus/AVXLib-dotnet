@@ -55,10 +55,11 @@ namespace AVXCLI {
 		{
 			if (len >= str->Length + 1) {
 				for (int i = 0; i < str->Length; i++)
-					chr[i] = str[i];
+					chr[i] = (char)str[i];
 				chr[str->Length] = char(0);
 				return chr;
 			}
+			return NULL;
 		}
 		Tuple<List<UInt16>^, Byte, Byte, UInt32, String^>^ EncodeAny(String^ token)
 		{
@@ -68,7 +69,7 @@ namespace AVXCLI {
 			if (token->StartsWith("/") && token->EndsWith("/")) {
 				if (token->Length > 2) {
 					String^ test = token->Substring(0, token->Length - 2);
-					UINT64 hash = HashTrivialFromString(test);
+					UINT64 hash = this->Encode64(test);
 
 					result = hash != 0 ? EncodeBoundary(hash) : nullptr;
 					if (result == nullptr || (result->Item3 == 0 && result->Item4 != nullptr))
@@ -86,7 +87,7 @@ namespace AVXCLI {
 			}
 			else if (token->StartsWith("#"))
 			{
-				UINT64 hash = HashTrivialFromString(token);
+				UINT64 hash = this->Encode64(token);
 				result = hash != 0 ? EncodeGlobalTest(hash) : nullptr;
 				if (result == nullptr || (result->Item2 == 0 && result->Item4 != nullptr))
 					result = EncodeLemma(token);
@@ -146,7 +147,6 @@ namespace AVXCLI {
 		}
 		Tuple<List<UInt16>^, Byte, Byte, String^>^ EncodeLanguageNumeric(String^ token)
 		{
-			Tuple<List<UInt16>^, Byte, Byte, String^>^ result;
 			auto list = gcnew List<UInt16>();
 
 			if (token->StartsWith("#") && token->Length >= 3)
@@ -236,9 +236,9 @@ namespace AVXCLI {
 			Byte otherType = 0;
 			auto list = gcnew List<UInt16>();
 
-			UINT64 test = Hash64FromString(token);
-			if (reverseLemma.count(test) != 0) {
-				auto head = reverseLemma.at(test);
+			UINT64 test = this->Hash64(token);
+			if (this->reverseLemma.count(test) != 0) {
+				auto head = this->reverseLemma.at(test);
 				list->Add(head->value);
 				for (BucketOverflow* next = head->overflow; next != NULL; next = next->next)
 					list->Add(next->value);
@@ -263,9 +263,7 @@ namespace AVXCLI {
 			String^ word;
 			if (pound >= 0) {
 				good = false;
-				char result[24];
-				char* chr = StrToChr(token->Substring(pound)->ToLower(), result, 24);
-				auto chk = HashTrivial(chr);
+				auto chk = this->Encode64(token->Substring(pound));
 				good = suffixMap.count(chk);
 				if (good)
 					tokenType |= suffixMap.at(chk);
@@ -300,7 +298,7 @@ namespace AVXCLI {
 				}
 				else
 				{
-					UINT64 hash = Hash64FromString(token);
+					UINT64 hash = this->Hash64(token); /// <--- Error occurs here
 					switch ((BYTE)tokenType & FIND_Suffix_MASK) {
 						case FIND_Suffix_Modern:	EncodeWordSearch(list, hash);
 													break;
@@ -314,7 +312,7 @@ namespace AVXCLI {
 			}
 			return gcnew Tuple<List<UInt16>^, Byte, Byte, String^>(list, tokenType, otherType, error);
 		}
-		static bool StartsWith(char* chr, String^ str)
+		static bool StartsWith(const char* chr, String^ str)
 		{
 			if (str == nullptr || chr == NULL)
 				return false;
@@ -333,7 +331,7 @@ namespace AVXCLI {
 			}
 			return true;
 		}
-		static bool EndsWith(char* chr, String^ str)
+		static bool EndsWith(const char* chr, String^ str)
 		{
 			if (str == nullptr || chr == NULL)
 				return false;
@@ -357,12 +355,13 @@ namespace AVXCLI {
 		}
 		void EncodeWordModernWildcard(List<UInt16>^ list, String^ start, String^ end)
 		{
-			for (auto it = reverseModern.begin(); it != reverseModern.end(); ++it) {
+			char token[17];
+			for (auto it = this->reverseModern.begin(); it != this->reverseModern.end(); ++it) {
 				auto hashed = it->first;
-				char* token = getHashedString(hashed);
-				
-				if ((start == nullptr || StartsWith(token, start))
-				&&  (end == nullptr   || EndsWith(token, end)) ) {
+				auto found = Decode(hashed, token, 17);
+				if ( (found > 0)
+				&&   (start == nullptr || StartsWith(token, start))
+				&&   (end   == nullptr || EndsWith(token, end))) {
 					auto bucket = it->second;
 					list->Add(bucket->value);
 					for (BucketOverflow* next = bucket->overflow; next != NULL; next = next->next)
@@ -372,36 +371,30 @@ namespace AVXCLI {
 		}
 		void EncodeWordSearchWildcard(List<UInt16>^ list, String^ start, String^ end)
 		{
-			for (auto it = reverseSearch.begin(); it != reverseSearch.end(); ++it) {
+			char token[17];
+			for (auto it = this->reverseSearch.begin(); it != this->reverseSearch.end(); ++it) {
 				auto hashed = it->first;
-				char* token = getHashedString(hashed);
-
-				if ((start == nullptr || StartsWith(token, start))
-					&& (end == nullptr || EndsWith(token, end))) {
+				auto found = Decode(hashed, token, 17);
+				if ( (found > 0)
+				&&   (start == nullptr || StartsWith(token, start))
+				&&   (end   == nullptr || EndsWith(token, end)))
 					list->Add(it->second);
-				}
 			}
 		}
 		void EncodeWordSearch(List<UInt16>^ list, UINT64 word)
 		{
-			if (reverseSearch.count(word) != 0)
+			if (this->reverseSearch.count(word) != 0)
 			{
-				auto list = gcnew List<UInt16>();
-				if (reverseSearch.count(word) != 0) {
-					list->Add(reverseSearch.at(word));
-				}
+				list->Add(this->reverseSearch.at(word));
 			}
 		}
 		void EncodeWordModern(List<UInt16>^ list, UINT64 word)
 		{
-			if (reverseModern.count(word) != 0) {
-				auto list = gcnew List<UInt16>();
-				if (reverseModern.count(word) != 0) {
-					auto head = reverseModern.at(word);
-					list->Add(head->value);
-					for (BucketOverflow* next = head->overflow; next != NULL; next = next->next)
-						list->Add(next->value);
-				}
+			if (this->reverseModern.count(word) != 0) {
+				auto head = this->reverseModern.at(word);
+				list->Add(head->value);
+				for (BucketOverflow* next = head->overflow; next != NULL; next = next->next)
+					list->Add(next->value);
 			}
 		}
 		AbstractQuelleSearchResult^ Search(QRequestSearch^ request) override
@@ -410,14 +403,14 @@ namespace AVXCLI {
 
 			for each (auto clause in request->clauses) {
 				for each (auto fragment in clause->fragments) {
-					for each (auto spec in fragment->spec) {
+					for each (auto spec in fragment->specifications) {
 						for each (auto match in spec->matchAny) {
 							for each (auto feature in match->features) {
 								auto tuple = EncodeAny(feature->feature);
 								if (tuple->Item5 != nullptr)
-									result->messages->Add("error", tuple->Item5);
+									result->AddError(tuple->Item5);
 								else if (tuple->Item2 == 0 && tuple->Item3 == 0)
-									result->messages->Add("error", "Could not parse feature token: '" + feature->feature + "'");
+									result->AddError("Could not parse feature token: '" + feature->feature + "'");
 								else if (tuple->Item4 != 0) {
 									((Feature^)feature)->type = tuple->Item2;
 									((Feature^)feature)->subtype = tuple->Item3;
@@ -427,18 +420,28 @@ namespace AVXCLI {
 								else if (tuple->Item1 != nullptr && tuple->Item1->Count > 0) {
 									((Feature^)feature)->type = tuple->Item2;
 									((Feature^)feature)->subtype = tuple->Item3;
-									((Feature^)feature)->discretePOS = tuple->Item4;
+									((Feature^)feature)->discretePOS = 0;
 									((Feature^)feature)->featureMatchVector = tuple->Item1;
 								}
 								else if (tuple->Item2 == 0 && tuple->Item3 == 0)
-									result->messages->Add("error", "Could not parse feature token: '" + feature->feature + "'");
+									result->AddError("Could not parse feature token: '" + feature->feature + "'");
 							}
 						}
 					}
 					// Now we can execute the search (micro-parsing is complete)
 					//
-					if (result->messages->Count < 1) {
-
+					if (result->messages == nullptr || result->messages->Count < 1) {
+						for each (auto clause in request->clauses) {
+							for each (auto fragment in clause->fragments) {
+								for each (auto spec in fragment->specifications) {
+									for each (auto match in spec->matchAny) {
+										for each (auto feature in match->features) {
+											;
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -466,21 +469,21 @@ namespace AVXCLI {
 
 			return str;
 		}
-		UInt64 Hash64FromString(String^ token)
+		UInt64 Hash64(String^ token)
 		{
 			char buffer[32];
 			buffer[31] = '\0';
-			if (token->Length <= 32)
-				buffer[token->Length-1] = '\0';
+			if (token->Length+1 <= 32)
+				buffer[token->Length] = '\0';
 			for (int i = 0; i < token->Length; i++)
 			{
 				if (i >= 31)
 					break;
 				buffer[i] = (char) token[i];
 			}
-			return Hash64(buffer);
+			return ::Hash64(buffer);
 		}
-		UInt64 HashTrivialFromString(String^ token)
+		UInt64 Encode64(String^ token)
 		{
 			if (token->Length > 8)
 				return 0;
@@ -491,7 +494,30 @@ namespace AVXCLI {
 			{
 				buffer[i] = tolower((char)token[i]);
 			}
-			return HashTrivial(buffer);
+			return ::Encode(buffer);
+		}
+		UInt64 Encode64(String^ token, bool normalize)
+		{
+			if (token->Length > 8)
+				return 0;
+
+			char buffer[9];
+			buffer[token->Length] = '\0';
+			for (int i = 0; i < token->Length; i++)
+			{
+				buffer[i] = tolower((char)token[i]);
+			}
+			return ::Encode(buffer, normalize);
+		}
+		String^ Decode64(UInt64 hash)
+		{
+			char buffer[32];
+			int result = ::Decode(hash, buffer, 32);
+
+			if (result <= 0)
+				return "";
+
+			return gcnew String(buffer, 0, strlen(buffer), System::Text::Encoding::ASCII);
 		}
 
 	protected:
