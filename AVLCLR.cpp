@@ -342,7 +342,27 @@ namespace AVXCLI {
 				// Now we can execute the search (micro-parsing is complete)
 				//
 				UINT32 cnt = getWritCnt();
-				if (result->messages == nullptr || result->messages->Count < 1) {
+				List<String^> errors;
+				List<String^> warnings;
+				if (result->messages != nullptr && result->messages->Count > 0) {
+					for each (auto entry in result->messages)
+						if (entry.Key == "errors")
+							for each (auto message in entry.Value)
+								if (!errors.Contains(message))
+									errors.Add(message);
+					for each (auto entry in result->messages)
+						if (entry.Key != "errors")
+							for each (auto message in entry.Value)
+								if (!warnings.Contains(message))
+									warnings.Add(message);
+					for each (auto error in errors)
+						Console::Out->WriteLine("Error: " + error);
+					for each (auto warning in warnings)
+						Console::Out->WriteLine("Warning: " + warning);
+					result->messages->Clear();
+				}
+				else
+				{
 					for each (auto clause in request->clauses) {
 						HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
 						for each (UInt32 match in matches)
