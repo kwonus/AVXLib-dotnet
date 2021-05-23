@@ -1,6 +1,7 @@
 #pragma once
 #pragma managed(push, off)
 #include <avx.h>
+#include <feature.h>
 #include <CLexIndex.h>
 #include <fivebitencoding.h>
 using namespace std;
@@ -10,6 +11,7 @@ using namespace System;
 using namespace System::ComponentModel;
 using namespace System::Collections;
 using namespace System::Collections::Generic;
+
 using namespace System::Diagnostics;
 using namespace QuelleHMI;
 using namespace QuelleHMI::Tokens;
@@ -78,6 +80,9 @@ namespace AVXCLI {
 		UInt64 Encode64(String^ token);
 		UInt64 Encode64(String^ token, bool normalize);
 		String^ Decode64(UInt64 hash);
+		HashSet<UInt32>^ SearchClause(QClauseSearch^ clause, QSearchControls^ controls);
+		AVVerse& verseIdxToBcv(UINT16);
+
 		static bool StartsWith(const char* chr, String^ str)
 		{
 			if (str == nullptr || chr == NULL)
@@ -119,5 +124,12 @@ namespace AVXCLI {
 			}
 			return true;
 		}
+		private:
+			bool SearchClauseQuoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
+			bool SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
+			Int32 SearchUnorderedInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag);
+			Int32 SearchSequentiallyInSpan(AVWrit* &pwrit, UInt16& span, QSearchFragment^ frag);
+			bool IsMatch(const AVWrit const& writ, QSearchFragment^ frag);
+			bool IsMatch(const AVWrit const& writ, Feature^ feature);
 	};
 }

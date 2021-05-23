@@ -1,5 +1,6 @@
 #include "AVLCLR.h"
 
+
 namespace AVXCLI {
 
 	char* AVLCLR::StrToChr(String^ str, char* chr, int len)
@@ -343,6 +344,17 @@ namespace AVXCLI {
 				UINT32 cnt = getWritCnt();
 				if (result->messages == nullptr || result->messages->Count < 1) {
 					for each (auto clause in request->clauses) {
+						HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
+						for each (UInt32 match in matches)
+						{
+							auto parts = (BYTE*)&match;
+							auto book = getBookByNum((UINT16)(*parts++));
+							Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
+							Console::Out->Write(((UInt16)*parts++).ToString() + ":");
+							Console::Out->WriteLine(((UInt16)*parts).ToString());
+						}
+
+						/*
 						for each (auto fragment in clause->fragments) {
 							for each (auto spec in fragment->specifications) {
 								for each (auto match in spec->matchAny) {
@@ -364,6 +376,7 @@ namespace AVXCLI {
 								}
 							}
 						}
+						*/
 					}
 				}
 			}
@@ -441,6 +454,228 @@ namespace AVXCLI {
 			return "";
 
 		return gcnew String(buffer, 0, strlen(buffer), System::Text::Encoding::ASCII);
+	}
+	AVVerse& AVLCLR::verseIdxToBcv(UINT16 idx) {
+		return getVerse(idx);
+	}
+	HashSet<UInt32>^ AVLCLR::SearchClause(QClauseSearch^ clause, QSearchControls^ controls)
+	{
+		auto list = gcnew HashSet<UInt32>();
+
+		if (clause->quoted)
+			this->SearchClauseQuoted(list, clause, controls);
+		else
+			this->SearchClauseUnquoted(list, clause, controls);
+
+		return list;
+	}
+	bool AVLCLR::IsMatch(const AVWrit const& writ, Feature^ feature)
+	{
+		if (feature->discretePOS != 0)
+			return feature->not == false
+			? writ.pos == feature->discretePOS
+			: writ.pos != feature->discretePOS;
+
+		bool slashes = feature->feature->StartsWith("/") && feature->feature->EndsWith("/") && (feature->feature->Length > 2);
+		String^ token = slashes
+			? feature->feature->Substring(1, feature->feature->Length - 2)
+			: feature->feature;
+
+		bool not = feature->not;
+
+		if (slashes) {
+			switch (feature->subtype)
+			{
+				case SLASH_BitwisePOS:	for each (UInt16 value in feature->featureMatchVector)
+											if ((value & writ.pnwc) == value)
+												return !not;
+										return not;
+				case SLASH_Puncuation:	for each (UInt16 value in feature->featureMatchVector)
+											if ((value & writ.punc) == value)
+												return !not;
+										return not;
+				case SLASH_Boundaries:	for each (UInt16 value in feature->featureMatchVector)
+											if ((value & writ.transition) == value)
+												return !not;
+										return not;
+				case SLASH_RESERVED_80:
+				case SLASH_RESERVED_40:
+				case SLASH_RESERVED_20:
+				case SLASH_RESERVED_10:
+				default:			return not;
+			}
+		}
+		else
+		{
+			// incomplete!!!
+			switch (feature->type & (FIND_Token|FIND_Lemma|FIND_GlobalTest|FIND_LANGUAGE_NUMERIC))
+			{
+				// TODO: add suffix support:
+				/*
+				* FIND_Suffix_MASK  
+				* FIND_Suffix_Exact 
+				* FIND_Suffix_Modern
+				* FIND_Suffix_Either
+				* FIND_Suffix_None  
+				*/
+				case FIND_Token:	for each (UInt16 value in feature->featureMatchVector)
+										if (value == (writ.wordKey & 0x3FFF))
+										{
+//											Console::Out->WriteLine("Found: " + feature->feature);
+											return !not;
+										}
+									return not;
+				case FIND_English:	for each (UInt16 value in feature->featureMatchVector)
+										if (value == (writ.wordKey & 0x3FFF))
+											return !not;
+									return not;
+
+				case FIND_Hebrew:	if (getVerse(writ.verseIdx).book <= 39) {
+										int i = 0;
+										auto strongs = (UINT16*)writ.srclang;
+										for (auto strongs = (UINT16*)writ.srclang; *strongs != 0; strongs++)
+											for each (UInt16 value in feature->featureMatchVector)
+											{
+												if (value == (UInt16)*strongs)
+													return !not;
+												if (++i == 4)
+													return not;
+											}
+									}
+									return not;
+				case FIND_Greek:	if (getVerse(writ.verseIdx).book >= 40) {
+										int i = 0;
+										auto strongs = (UINT16*)writ.srclang;
+										for (auto strongs = (UINT16*)writ.srclang; *strongs != 0; strongs++)
+											for each (UInt16 value in feature->featureMatchVector)
+											{
+												if (value == (UInt16)*strongs)
+													return !not;
+												if (++i == 3)
+													return not;
+											}
+									}
+									return not;
+				case FIND_Lemma:	for each (UInt16 value in feature->featureMatchVector)
+										if (value == writ.lemma)
+											return !not;
+									return not;
+				case FIND_GlobalTest: // #diff or #same // TODO: determine which one
+
+				/*case typeWordSame:*/	{
+										UINT16 key = writ.wordKey & 0x3FFF;
+										auto srch = getLexicalEntry(key, SEARCH);
+										auto mdrn = getLexicalEntry(key, MODERN);
+										auto disp = getLexicalEntry(key, DISPLAY);
+										if (srch == NULL)
+											return not;
+										else
+											return mdrn == disp ? !not : not;
+									}
+			}
+		}
+		return false;
+	}
+	bool AVLCLR::IsMatch(const AVWrit const& writ, QSearchFragment^ frag)
+	{
+		for each (auto spec in frag->specifications) {
+			bool matchedAny = false;
+			for each (auto feature in spec->matchAny) {
+				bool matchedAll = true;
+				for each (auto feature in feature->features) {
+					matchedAll = this->IsMatch(writ, (Feature^)feature);
+					if (!matchedAll)
+						break;
+				}
+				matchedAny = matchedAll;
+			}
+			if (matchedAny)
+				return true;
+		}
+		return false;
+	}
+	bool AVLCLR::SearchClauseQuoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls)
+	{
+		bool found = false;
+		UInt16 span = controls->span;
+		AVWrit* cursor = getWrit(0);	// ignore search.domain for now
+		do {
+			AVVerse& verse = getVerse(cursor->verseIdx);
+			bool matched = true;
+			UInt16 localspan = (span == 0) ? getVerse(cursor->verseIdx).wordCnt : span;
+			for each (QSearchFragment ^ fragment in clause->fragments) {
+				matched = (this->SearchSequentiallyInSpan(cursor, localspan, fragment) >= 0);
+				if (!matched)
+					break;
+			}
+			if (matched) {
+				UINT32 begin = *((UINT32*)&verse);
+				list->Add(begin);
+				verse = getVerse(cursor->verseIdx);
+				UINT32 end = *((UINT32*)&verse);
+				if (end != begin)
+					list->Add(end);
+			}
+			if (span == 0 && matched) { // advance to the next verse
+				while (cursor->transition & 0x30 != 0x20)
+					cursor ++;
+			}
+		} while ((cursor - 1)->transition != 0xF8 && cursor->transition != 0xF8);
+		return found;
+	}
+	Int32 AVLCLR::SearchSequentiallyInSpan(AVWrit*& pwrit, UInt16& span, QSearchFragment^ frag)
+	{
+		for (Int32 i = 1; i <= span; i++) {
+			if (this->IsMatch(*pwrit, frag)) {
+				span -= i;
+				return i;
+			}
+			pwrit++;
+		}
+		span = 0;
+		return (Int32)-1;
+	}
+	bool AVLCLR::SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls)
+	{
+		bool found = false;
+		UInt16 span = controls->span;
+		AVWrit* cursor = getWrit(0);	// ignore search.domain for now
+		do {
+			AVVerse& verse = getVerse(cursor->verseIdx);
+			bool matched = true;
+			UInt16 localspan = (span == 0) ? getVerse(cursor->verseIdx).wordCnt : span;
+			for each (QSearchFragment ^ fragment in clause->fragments) {
+				matched = (this->SearchUnorderedInSpan(cursor, localspan, fragment) >= 0);
+				if (!matched)
+					break;
+				else if (!found)
+					found = true;
+			}
+			if (matched) {
+				UINT32 begin = *((UINT32*)&verse);
+				list->Add(begin);
+				verse = getVerse(cursor->verseIdx);
+				UINT32 end = *((UINT32*)&verse);
+				if (end != begin)
+					list->Add(end);
+			}
+			cursor += localspan;
+			if ((cursor->transition & 0x30) != 0x20) {
+				auto transition = (UInt16)((cursor - 1)->transition);
+			}
+			if (span == 0 && matched) { // advance to the next verse
+				while (cursor->transition & 0x30 != 0x20)
+					cursor++;
+			}
+		}	while (((cursor-1)->transition & 0xF8) != 0xF8 && (cursor->transition & 0xF8) != 0xF8);
+		return found;
+	}
+	Int32 AVLCLR::SearchUnorderedInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag)
+	{
+		for (Int32 i = 0; i < span; i++)
+			if (this->IsMatch(pwrit[i], frag))
+				return i;
+		return (Int32) -1;
 	}
 }
 

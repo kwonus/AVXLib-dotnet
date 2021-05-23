@@ -6,8 +6,8 @@
 
 struct FeatureSpec
 {
-	char*		specification;
-	Feature*	matchAny;
+	char*			specification;
+	FeatureStruct*	matchAny;
 };
 
 class CFeatureSpec : slicable
