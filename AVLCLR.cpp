@@ -359,7 +359,7 @@ namespace AVXCLI {
 						Console::Out->WriteLine("Error: " + error);
 					for each (auto warning in warnings)
 						Console::Out->WriteLine("Warning: " + warning);
-					result->messages->Clear();
+					return result;
 				}
 				else
 				{
@@ -373,30 +373,6 @@ namespace AVXCLI {
 							Console::Out->Write(((UInt16)*parts++).ToString() + ":");
 							Console::Out->WriteLine(((UInt16)*parts).ToString());
 						}
-
-						/*
-						for each (auto fragment in clause->fragments) {
-							for each (auto spec in fragment->specifications) {
-								for each (auto match in spec->matchAny) {
-									for each (auto feature in match->features) {
-										for (UINT32 w = 0; w < cnt; w++) {
-											AVWrit& record = *getWrit(w);
-											if (UINT16(record.wordKey & 0x3FFF) == feature->featureMatchVector[0]) {
-												auto verse = getVerse(record.verseIdx);
-												auto book = getBookByNum(verse.book);
-												auto name = (char*)(&book.name);
-												auto bookname = gcnew String(name);
-												auto reference = bookname + " "
-													+ ((UInt16)verse.chapter).ToString() + ":"
-													+ ((UInt16)verse.verse).ToString();
-												Console::Out->WriteLine(reference);
-											}
-										}
-									}
-								}
-							}
-						}
-						*/
 					}
 				}
 			}
