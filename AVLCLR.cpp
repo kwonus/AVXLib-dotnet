@@ -314,6 +314,18 @@ namespace AVXCLI {
 
 		for each (auto clause in request->clauses) {
 			for each (auto fragment in clause->fragments) {
+				if (fragment->text->StartsWith("|") || fragment->text->EndsWith("|")) {
+					result->AddError("The '|' logical-or operator cannot be used without left and right operands");
+					return result;
+				}
+				else if (fragment->text->StartsWith("&") || fragment->text->EndsWith("&")) {
+					result->AddError("The '&' logical operator-and cannot be used without left and right operands");
+					return result;
+				}
+				else if (fragment->text == nullptr || fragment->text->Length < 1) {
+					result->AddError("Unable to parse word-token specication");
+					return result;
+				}
 				for each (auto spec in fragment->specifications) {
 					for each (auto match in spec->matchAny) {
 						for each (auto feature in match->features) {
@@ -342,23 +354,7 @@ namespace AVXCLI {
 				// Now we can execute the search (micro-parsing is complete)
 				//
 				UINT32 cnt = getWritCnt();
-				List<String^> errors;
-				List<String^> warnings;
 				if (result->messages != nullptr && result->messages->Count > 0) {
-					for each (auto entry in result->messages)
-						if (entry.Key == "errors")
-							for each (auto message in entry.Value)
-								if (!errors.Contains(message))
-									errors.Add(message);
-					for each (auto entry in result->messages)
-						if (entry.Key != "errors")
-							for each (auto message in entry.Value)
-								if (!warnings.Contains(message))
-									warnings.Add(message);
-					for each (auto error in errors)
-						Console::Out->WriteLine("Error: " + error);
-					for each (auto warning in warnings)
-						Console::Out->WriteLine("Warning: " + warning);
 					return result;
 				}
 				else
