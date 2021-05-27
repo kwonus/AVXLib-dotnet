@@ -5,9 +5,6 @@
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
-using namespace std;
-
-
 extern "C"
 {
 using AVWrit = struct AVWritDX

@@ -45,6 +45,18 @@
     <ClCompile Include="AVLCLR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="XBitArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BookChapterVerseMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BookChapterVerse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AVXSearchResult.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="avx.h">
@@ -93,6 +105,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AVLCLR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XBitArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BookChapterVerseMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BookChapterVerse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AVXSearchResult.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,7 +4,6 @@
 #include <feature.h>
 #include <CLexIndex.h>
 #include <fivebitencoding.h>
-using namespace std;
 #pragma managed(pop)
 
 using namespace System;

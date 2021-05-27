@@ -1,5 +1,6 @@
 #include "AVLCLR.h"
-
+#include <BookChapterVerse.h>
+#include <AVXSearchResult.h>
 
 namespace AVXCLI {
 
@@ -359,17 +360,37 @@ namespace AVXCLI {
 				}
 				else
 				{
+					BookChapterVerse bcvMatches;
+
 					for each (auto clause in request->clauses) {
 						HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
 						for each (UInt32 match in matches)
 						{
 							auto parts = (BYTE*)&match;
-							auto book = getBookByNum((UINT16)(*parts++));
+							Byte b = *parts++;
+							Byte c = *parts++;
+							Byte v = *parts++;
+							bcvMatches.AddVerse(b, c, v);
+
+							auto book = getBookByNum(UINT16(b));
 							Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
-							Console::Out->Write(((UInt16)*parts++).ToString() + ":");
-							Console::Out->WriteLine(((UInt16)*parts).ToString());
+							Console::Out->Write(UInt16(c).ToString() + ":");
+							Console::Out->WriteLine(UInt16(v).ToString());
 						}
 					}
+					UINT16 nativeArray[17];
+					result = gcnew AVXSearchResult(bcvMatches.bcv);
+					for each (auto book in result->matches)
+						for each (auto chapter in book.Value) {
+							auto compacted = chapter.Value;
+							auto cnt = 1 + XBitArray255::CountBits(compacted[0]);
+							for (int i = 0; i < cnt; i++)
+								nativeArray[i] = compacted[i];
+							auto x = new XBitArray255(nativeArray);
+							auto test = x->CreateByteArray();
+							free(test);
+						}
+
 				}
 			}
 		}
