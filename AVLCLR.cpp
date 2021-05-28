@@ -312,7 +312,7 @@ namespace AVXCLI {
 	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
 	{
 		auto result = gcnew AbstractQuelleSearchResult();
-
+		auto additions = gcnew List<AVXSearchResult^>();
 		for each (auto clause in request->clauses) {
 			for each (auto fragment in clause->fragments) {
 				if (fragment->text->StartsWith("|") || fragment->text->EndsWith("|")) {
@@ -379,12 +379,11 @@ namespace AVXCLI {
 #endif
 						}
 					}
-					auto avxresult = gcnew AVXSearchResult(bcvMatches.bcv);
-					avxresult->messages = result->messages;
-					result = avxresult;
+					auto clauseResult = gcnew AVXSearchResult(bcvMatches.bcv, clause->polarity);
+					additions->Add(clauseResult);
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 					UINT16 nativeArray[17];
-					for each (auto book in result->matches) {
+					for each (auto book in clauseResult->matches) {
 						for each (auto chapter in book.Value) {
 							auto info = getBookByNum(UINT16(book.Key));
 							Console::Out->Write(gcnew String((const char*)(&(info.name))) + "[" + UInt16(book.Key).ToString() + "] ");
@@ -407,6 +406,35 @@ namespace AVXCLI {
 						}
 					}
 #endif
+				}
+			}
+		}
+		if (additions->Count > 0) {
+			if ((additions->Count == 1) && additions[0]->positive) {
+				additions[0]->messages = result->messages;
+				result = additions[0];
+			}
+			else {
+				unsigned int found = 0;
+				for (int i = 0; i < additions->Count; i++) {
+					if ((additions[i]->matches->Count > 0)
+					&&   additions[i]->positive) {
+						if (++found == 1) {
+							additions[i]->messages = result->messages;
+							result = additions[i];
+						}
+						else {
+							((AVXSearchResult^)result)->Add(additions[i]->matches);
+						}
+					}
+				}
+				if (found > 0)
+				{
+					for (int i = 0; i < additions->Count; i++) {
+						if ((additions[i]->matches->Count > 0)
+						&&  !additions[i]->positive)
+							((AVXSearchResult^)result)->Subtract(additions[i]->matches);
+					}
 				}
 			}
 		}

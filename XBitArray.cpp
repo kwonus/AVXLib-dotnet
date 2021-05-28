@@ -94,6 +94,27 @@ bool XBitArray255::UnsetBit(BYTE item) {
 	return false;
 }
 
+void XBitArray255::Add(XBitArray255& operand) {
+	this->directory |= operand.directory;
+	for (int i = 0; i < 16; i++) {
+		this->array[i] |= operand.array[i];
+	}
+}
+void XBitArray255::Subtract(XBitArray255& operand) {
+	UINT16 bit = 1;
+	for (int i = 0; i < 16; i++) {
+		if (this->array[i] != 0) {
+			auto negation = UINT16(0xFFFF ^ operand.array[i]);
+			this->array[i] &= negation;
+
+			if (this->array[i] == 0) {
+				this->directory ^= bit;
+			}
+		}
+		bit <<= 1;
+	}
+}
+
 UINT16* XBitArray255::CreateCompactBitArray() {	// up to size=17 UINT16[]	// most compact
 	int countSegments = 0;
 	for (auto s = 0; s < 16; s++)
