@@ -56,8 +56,8 @@ XBitArray255::XBitArray255(bool positionalBits[], BYTE cnt) {
 
 bool XBitArray255::SetBit(BYTE item) {
 	if (item > 0) {
-		BYTE index = item / 16;
-		BYTE local = item % 16;
+		BYTE index = (item-1) / 16;
+		BYTE local = (item-1) % 16;
 
 		UINT16 dir = 1;
 		if (index > 0)
@@ -65,8 +65,8 @@ bool XBitArray255::SetBit(BYTE item) {
 		this->directory |= dir;
 
 		UINT16 loc = 1;
-		if (local > 1)
-			this->array[index] <<= (local-1);
+		if (local > 0)
+			loc <<= local;
 		this->array[index] |= loc;
 
 		return true;
@@ -76,18 +76,18 @@ bool XBitArray255::SetBit(BYTE item) {
 
 bool XBitArray255::UnsetBit(BYTE item) {
 	if (item > 0) {
-		BYTE index = item / 16;
-		BYTE local = item % 16;
+		BYTE index = (item - 1) / 16;
+		BYTE local = (item - 1) % 16;
 
-		BYTE unset = 1;
+		UINT16 dir = 1;
 		if (index > 0)
-			unset <<= index;
-		this->directory ^= unset;
+			dir <<= index;
+		this->directory |= dir;
 
-		BYTE unsetArray = 1;
-		if (local > 1)
-			unsetArray <<= (local-1);
-		this->array[index] ^= unsetArray;
+		UINT16 loc = 1;
+		if (local > 0)
+			loc <<= local;
+		this->array[index] ^= loc;
 
 		return true;
 	}
@@ -150,22 +150,20 @@ BYTE* XBitArray255::CreateByteArray() {			// up to size=255 BYTE[]	// much less 
 	return result;
 }
 
-BYTE XBitArray255::GetBoolArray(bool array[], BYTE maxCnt) {// up to size=255 bool[]	// least compact
+BYTE XBitArray255::GetBoolArray(bool result[], BYTE maxCnt) {// up to size=255 bool[]	// least compact
 	BYTE cnt = 0;
-	BYTE pos = 0;
+	BYTE baseline = 0;
 	for (auto index = 0; index < 16; index++) {
-		int position = 0;
 		if (this->array[index] != 0) {
 			for (UINT16 bit = 1; bit != 0; bit <<= 1) {
-				pos = (16 * index) + position;
-				if (pos < maxCnt) {
-					bool on = ((this->array[position] & bit) != 0);
-					if (pos < maxCnt)
-						array[pos] = on;
-					if (on)
-						cnt = pos;
+				bool on = ((this->array[index] & bit) != 0);
+				if (on)
+					cnt = baseline + 1;
+				if (baseline < maxCnt) {
+					array[baseline] = on;
 				}
 			}
+			baseline++;
 		}
 	}
 	return cnt;

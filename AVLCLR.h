@@ -53,12 +53,12 @@ namespace AVXCLI {
 
 			SELF = this;
 
-
 			//	Temporary test:
 			XBitArray255 test;
 			test.SetBit(1);
 			test.SetBit(4);
-			test.SetBit(22);
+			test.SetBit(33);
+			test.SetBit(32);
 			test.SetBit(16);
 			test.SetBit(15);
 			test.SetBit(255);
@@ -68,7 +68,8 @@ namespace AVXCLI {
 				Console::Out->Write(delimiter + UInt16(list[i]).ToString());
 				delimiter = ", ";
 			}
-			auto x = 1;
+			Console::Out->WriteLine();
+			delete list;
 		}
 		~AVLCLR()
 		{
