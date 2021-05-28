@@ -4,7 +4,9 @@
 #include <feature.h>
 #include <CLexIndex.h>
 #include <fivebitencoding.h>
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 #include <XBitArray.h>
+#endif
 #pragma managed(pop)
 
 using namespace System;
@@ -53,6 +55,7 @@ namespace AVXCLI {
 
 			SELF = this;
 
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 			//	Temporary test:
 			XBitArray255 test;
 			test.SetBit(1);
@@ -70,6 +73,7 @@ namespace AVXCLI {
 			}
 			Console::Out->WriteLine();
 			delete list;
+#endif
 		}
 		~AVLCLR()
 		{
@@ -89,8 +93,8 @@ namespace AVXCLI {
 		void EncodeWordSearchWildcard(List<UInt16>^ list, String^ start, String^ end);
 		void EncodeWordSearch(List<UInt16>^ list, UINT64 word);
 		void EncodeWordModern(List<UInt16>^ list, UINT64 word);
-		AbstractQuelleSearchResult^ Search(QRequestSearch^ request) override;
-		AbstractQuellePageResult^ Page(QRequestPage^ request) override;
+		IQuelleSearchResult^ Search(QRequestSearch^ request) override;
+		IQuellePageResult^ Page(QRequestPage^ request) override;
 		String^ Test(String^ request) override;
 		String^ GetLex(UInt16 wkey, BYTE sequence);
 		String^ GetOOV(UInt16 okey);
@@ -100,6 +104,7 @@ namespace AVXCLI {
 		String^ Decode64(UInt64 hash);
 		HashSet<UInt32>^ SearchClause(QClauseSearch^ clause, QSearchControls^ controls);
 		AVVerse& verseIdxToBcv(UINT16);
+		array<Byte>^ ExpandVerseArray(array<UInt16>^ bits);
 
 		static bool StartsWith(const char* chr, String^ str)
 		{

@@ -309,7 +309,7 @@ namespace AVXCLI {
 				list->Add(next->value);
 		}
 	}
-	AbstractQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
+	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
 	{
 		auto result = gcnew AbstractQuelleSearchResult();
 
@@ -371,19 +371,23 @@ namespace AVXCLI {
 							Byte c = *parts++;
 							Byte v = *parts++;
 							bcvMatches.AddVerse(b, c, v);
-
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 							auto book = getBookByNum(UINT16(b));
 							Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
 							Console::Out->Write(UInt16(c).ToString() + ":");
 							Console::Out->WriteLine(UInt16(v).ToString());
+#endif
 						}
 					}
+					auto avxresult = gcnew AVXSearchResult(bcvMatches.bcv);
+					avxresult->messages = result->messages;
+					result = avxresult;
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 					UINT16 nativeArray[17];
-					result = gcnew AVXSearchResult(bcvMatches.bcv);
 					for each (auto book in result->matches) {
 						for each (auto chapter in book.Value) {
 							auto info = getBookByNum(UINT16(book.Key));
-							Console::Out->Write(gcnew String((const char*)(&(info.name))) + " ");
+							Console::Out->Write(gcnew String((const char*)(&(info.name))) + "[" + UInt16(book.Key).ToString() + "] ");
 							Console::Out->Write(UInt16(chapter.Key).ToString());
 
 							auto compacted = chapter.Value;
@@ -402,13 +406,13 @@ namespace AVXCLI {
 							free(test);
 						}
 					}
-
+#endif
 				}
 			}
 		}
 		return result;
 	}
-	AbstractQuellePageResult^ AVLCLR::Page(QRequestPage^ request)
+	IQuellePageResult^ AVLCLR::Page(QRequestPage^ request)
 	{
 		return nullptr;
 	}
@@ -701,6 +705,45 @@ namespace AVXCLI {
 			if (this->IsMatch(pwrit[i], frag))
 				return i;
 		return (Int32) -1;
+	}
+	// see XBitArray::CreateByteArray() for reference, but this method has different implementation and is dotnet
+	array<Byte>^ AVLCLR::ExpandVerseArray(array<UInt16>^ bits) {
+		if (bits == nullptr || bits->Length < 1)
+			return nullptr;
+
+		BYTE cnt = 0;
+		if (bits[0] != 0)
+			for (auto s = 1; s < bits->Length; s++)
+				cnt += XBitArray255::CountBits(bits[s]);
+
+		auto result = gcnew array<Byte>(cnt);
+		if (cnt == 0)
+			return result;
+
+		BYTE baseline = 0;
+		BYTE current = 0;
+		BYTE idx = 0;
+		BYTE index = 0;
+		UInt16 bitSegment = bits[0];
+		do {
+			if ((bitSegment & 0x1) != 0) {
+				for (UINT16 bit = 0x1; bit != 0; bit <<= 1) {
+					if ((bits[current] & bit) != 0) {
+						BYTE value = 1 + baseline;
+						result[idx++] = value;
+					}
+					baseline++;
+				}
+				current++;
+			}
+			else {
+				baseline += 16;
+			}
+			bitSegment >>= 1;
+			index++;
+		}	while (bitSegment != 0);
+
+		return result;
 	}
 }
 

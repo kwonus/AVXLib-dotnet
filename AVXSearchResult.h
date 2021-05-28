@@ -20,7 +20,7 @@ public:
     AVXSearchResult(Dictionary<Byte, Dictionary<Byte, array<UInt16>^>^>^ results) {
         this->results = results;
     }
-    //         b                c     v [compact bit array]        
+    //                  b                c     v [compact bit array]        
     property Dictionary<Byte, Dictionary<Byte, array<UInt16>^>^>^ matches {
         Dictionary<Byte, Dictionary<Byte, array<UInt16>^>^>^ get() override {
             return this->results;
