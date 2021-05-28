@@ -59,12 +59,16 @@ bool XBitArray255::SetBit(BYTE item) {
 		BYTE index = item / 16;
 		BYTE local = item % 16;
 
-		this->directory = 1;
+		UINT16 dir = 1;
 		if (index > 0)
-			this->directory <<= index;
-		this->array[index] = 1;
-		if (local > 0)
-			this->array[index] <<= local;
+			dir <<= index;
+		this->directory |= dir;
+
+		UINT16 loc = 1;
+		if (local > 1)
+			this->array[index] <<= (local-1);
+		this->array[index] |= loc;
+
 		return true;
 	}
 	return false;
@@ -77,13 +81,14 @@ bool XBitArray255::UnsetBit(BYTE item) {
 
 		BYTE unset = 1;
 		if (index > 0)
-			unset <<= (index - 1);
+			unset <<= index;
 		this->directory ^= unset;
 
 		BYTE unsetArray = 1;
-		if (local > 0)
-			unsetArray <<= (local - 1);
+		if (local > 1)
+			unsetArray <<= (local-1);
 		this->array[index] ^= unsetArray;
+
 		return true;
 	}
 	return false;
@@ -131,13 +136,17 @@ BYTE* XBitArray255::CreateByteArray() {			// up to size=255 BYTE[]	// much less 
 
 	auto result = (BYTE*)malloc(1 + cnt * sizeof(BYTE));
 	result[cnt] = 0;
-	auto pos = 0;
-	for (auto index = 0; index < 16; index++)
-		if (this->array[index] != 0) {
-			BYTE position = 1;
-			for (UINT16 bit = 1; bit != 0; bit <<= 1)
-				result[pos] = (16 * index) + position;
+	BYTE baseline = 0;
+	BYTE idx = 0;
+	for (auto index = 0; index < 16; index++) {
+		for (UINT16 bit = 0x1; bit != 0; bit <<= 1) {
+			if ((this->array[index] & bit) != 0) {
+				BYTE value = 1 + baseline;
+				result[idx++] = value;
+			}
+			baseline++;
 		}
+	}
 	return result;
 }
 

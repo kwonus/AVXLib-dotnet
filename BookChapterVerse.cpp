@@ -35,7 +35,7 @@ bool BookChapterVerse::AddVerse(BYTE b, BYTE c, BYTE v) {
 		auto cnt = verses.GetCompactBitArray(compactedVerses, 17);
 		auto oldCnt = 1 + XBitArray255::CountBits(compactedVerses[0]);
 		if (oldCnt == cnt) {
-			for (int c = 0; c <= cnt; c++)
+			for (int c = 0; c < cnt; c++)
 				chapter[c] = compactedVerses[c];
 			return true;
 		}

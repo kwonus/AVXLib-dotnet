@@ -4,6 +4,7 @@
 #include <feature.h>
 #include <CLexIndex.h>
 #include <fivebitencoding.h>
+#include <XBitArray.h>
 #pragma managed(pop)
 
 using namespace System;
@@ -51,6 +52,23 @@ namespace AVXCLI {
 			initialize(path);
 
 			SELF = this;
+
+
+			//	Temporary test:
+			XBitArray255 test;
+			test.SetBit(1);
+			test.SetBit(4);
+			test.SetBit(22);
+			test.SetBit(16);
+			test.SetBit(15);
+			test.SetBit(255);
+			auto list = test.CreateByteArray();
+			String^ delimiter = "";
+			for (auto i = 0; list[i] != 0; i++) {
+				Console::Out->Write(delimiter + UInt16(list[i]).ToString());
+				delimiter = ", ";
+			}
+			auto x = 1;
 		}
 		~AVLCLR()
 		{

@@ -380,16 +380,28 @@ namespace AVXCLI {
 					}
 					UINT16 nativeArray[17];
 					result = gcnew AVXSearchResult(bcvMatches.bcv);
-					for each (auto book in result->matches)
+					for each (auto book in result->matches) {
 						for each (auto chapter in book.Value) {
+							auto info = getBookByNum(UINT16(book.Key));
+							Console::Out->Write(gcnew String((const char*)(&(info.name))) + " ");
+							Console::Out->Write(UInt16(chapter.Key).ToString());
+
 							auto compacted = chapter.Value;
 							auto cnt = 1 + XBitArray255::CountBits(compacted[0]);
 							for (int i = 0; i < cnt; i++)
 								nativeArray[i] = compacted[i];
 							auto x = new XBitArray255(nativeArray);
 							auto test = x->CreateByteArray();
+							String^ delimiter = ":";
+							for (auto i = 0; test[i] != 0; i++) {
+								Console::Out->Write(delimiter + UInt16(test[i]).ToString());
+								delimiter = ", ";
+							}
+							Console::Out->WriteLine();
+							delete x;
 							free(test);
 						}
+					}
 
 				}
 			}
