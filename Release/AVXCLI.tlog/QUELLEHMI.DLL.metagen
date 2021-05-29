@@ -1,0 +1,862 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly QuelleHMI, Version=1.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Threading.Tasks.Extensions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51: 
+	hash=None, flags=None
+Assembly System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly Utf8Json, Version=1.3.7.0, Culture=neutral, PublicKeyToken=8a73d3ba7e392e27: 
+	hash=None, flags=None
+Class Quelle.DriverDefault.QuelleDriver: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuelleHelp
+  Methods:
+    Help(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Help(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Struct Quelle.Definitions.Catalog: AutoLayout, AnsiClass, Class, Public, SequentialLayout, Sealed, BeforeFieldInit
+  :System.ValueType
+    Void .ctor(System.Collections.Generic.Dictionary`2[System.String,System.Guid], System.Collections.Generic.Dictionary`2[System.Guid,QuelleHMI.Definitions.CatalogEntry]): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.Dictionary`2[System.String,System.Guid] labels : Public
+    System.Collections.Generic.Dictionary`2[System.Guid,QuelleHMI.Definitions.CatalogEntry] entries : Public
+  Methods:
+    Add(HMIStatement): PrivateScope, Public, HideBySig
+    Save(String, Guid): PrivateScope, Public, HideBySig
+    Create(): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Fragment: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Fields:
+    Char[] whitespace : Public, Static, InitOnly
+  Properties:
+    System.String text 'get set' : 
+    QuelleHMI.Tokens.FeatureSpec[] specifications 'get set' : 
+    Byte adjacency 'get set' : 
+    Byte group 'get set' : 
+  Methods:
+    get_text(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_specifications(): PrivateScope, Public, HideBySig, SpecialName
+    get_adjacency(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_group(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class QuelleHMI.HMICommand: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.List`1[QuelleHMI.HMIStatement] history : Public, Static
+    QuelleHMI.HMIStatement current : Public, Static
+  Properties:
+    QuelleHMI.HMIStatement statement 'get set' : 
+    System.String command 'get set' : 
+    System.Collections.Generic.List`1[System.String] errors 'get set' : 
+    System.Collections.Generic.List`1[System.String] warnings 'get set' : 
+  Methods:
+    get_statement(): PrivateScope, Public, HideBySig, SpecialName
+    get_command(): PrivateScope, Public, HideBySig, SpecialName
+    get_errors(): PrivateScope, Public, HideBySig, SpecialName
+    get_warnings(): PrivateScope, Public, HideBySig, SpecialName
+    Notify(String, String): PrivateScope, Public, HideBySig
+    Search(): PrivateScope, Public, HideBySig
+    Search(ISearchProvider): PrivateScope, Public, HideBySig
+Class QuelleHMI.HMIStatement: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(QuelleHMI.HMICommand, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Properties:
+    QuelleHMI.HMICommand command 'get set' : 
+    System.String statement 'get set' : 
+    System.Collections.Generic.Dictionary`2[System.UInt32,QuelleHMI.Actions.Action] segmentation 'get set' : 
+  Methods:
+    get_command(): PrivateScope, Public, HideBySig, SpecialName
+    Notify(String, String): PrivateScope, Public, HideBySig
+    get_statement(): PrivateScope, Public, HideBySig, SpecialName
+    get_segmentation(): PrivateScope, Public, HideBySig, SpecialName
+    SquenchAndNormalizeText(String): PrivateScope, Public, Static, HideBySig
+    SquenchText(String): PrivateScope, Public, Static, HideBySig
+    Normalize(): PrivateScope, Public, HideBySig
+    Execute(ISearchProvider): PrivateScope, Public, HideBySig
+Class QuelleHMI.QClauseDisplay: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.Actions.IQuelleDisplayClause): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Actions.IQuelleDisplayClause
+  Properties:
+    System.String[] specification 'get set' : 
+  Methods:
+    get_specification(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_specification(String[]): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QClauseSearch: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.Actions.IQuelleSearchClause): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.Actions.Search): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Properties:
+    QuelleHMI.QSearchFragment[] fragments 'get set' : 
+    System.String segment 'get set' : 
+    Byte polarity 'get set' : 
+    Boolean quoted 'get set' : 
+  Methods:
+    get_fragments(): PrivateScope, Public, HideBySig, SpecialName
+    set_fragments(QSearchFragment[]): PrivateScope, Public, HideBySig, SpecialName
+    get_segment(): PrivateScope, Public, HideBySig, SpecialName
+    set_segment(String): PrivateScope, Public, HideBySig, SpecialName
+    get_polarity(): PrivateScope, Public, HideBySig, SpecialName
+    set_polarity(Byte): PrivateScope, Public, HideBySig, SpecialName
+    get_quoted(): PrivateScope, Public, HideBySig, SpecialName
+    set_quoted(Boolean): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QSearchControls: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(Boolean): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.Definitions.IQuelleSearchControls): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Properties:
+    System.String host 'get set' : 
+    System.String domain 'get set' : 
+    UInt32 span 'get set' : 
+    Boolean exact 'get set' : 
+  Methods:
+    get_host(): PrivateScope, Public, HideBySig, SpecialName
+    set_host(String): PrivateScope, Public, HideBySig, SpecialName
+    get_domain(): PrivateScope, Public, HideBySig, SpecialName
+    set_domain(String): PrivateScope, Public, HideBySig, SpecialName
+    get_span(): PrivateScope, Public, HideBySig, SpecialName
+    set_span(UInt32): PrivateScope, Public, HideBySig, SpecialName
+    get_exact(): PrivateScope, Public, HideBySig, SpecialName
+    set_exact(Boolean): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QRequestPage: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.IQuellePageRequest): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuellePageRequest
+  Properties:
+    System.Guid session 'get set' : 
+    System.String format 'get set' : 
+    UInt64 page 'get set' : 
+  Methods:
+    get_session(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_session(Guid): PrivateScope, Public, HideBySig, SpecialName
+    get_format(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_format(String): PrivateScope, Public, HideBySig, SpecialName
+    get_page(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_page(UInt64): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QPageResult: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.IQuellePageResult): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuellePageResult
+  Properties:
+    System.String result 'get set' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get set' : 
+  Methods:
+    get_result(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_result(String): PrivateScope, Public, HideBySig, SpecialName
+    get_messages(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_messages(Dictionary`2): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QRequestSearch: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(Boolean): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.HMIStatement, UInt64): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.IQuelleSearchRequest, UInt64): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    QuelleHMI.QSearchControls controls : Public
+  Properties:
+    QuelleHMI.QClauseSearch[] clauses 'get set' : 
+    System.Guid session 'get set' : 
+    UInt64 cursor 'get set' : 
+    UInt64 count 'get set' : 
+    Boolean quoted 'get set' : 
+  Methods:
+    get_clauses(): PrivateScope, Public, HideBySig, SpecialName
+    set_clauses(QClauseSearch[]): PrivateScope, Public, HideBySig, SpecialName
+    get_session(): PrivateScope, Public, HideBySig, SpecialName
+    set_session(Guid): PrivateScope, Public, HideBySig, SpecialName
+    get_cursor(): PrivateScope, Public, HideBySig, SpecialName
+    set_cursor(UInt64): PrivateScope, Public, HideBySig, SpecialName
+    get_count(): PrivateScope, Public, HideBySig, SpecialName
+    set_count(UInt64): PrivateScope, Public, HideBySig, SpecialName
+    get_quoted(): PrivateScope, Public, HideBySig, SpecialName
+    set_quoted(Boolean): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QSearchResult: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.IQuelleSearchResult): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuelleSearchResult
+  Properties:
+    System.Collections.Generic.Dictionary`2[System.Byte,System.Collections.Generic.Dictionary`2[System.Byte,System.UInt16[]]] matches 'get set' : 
+    System.String summary 'get set' : 
+    System.Guid session 'get set' : 
+    System.Collections.Generic.Dictionary`2[System.UInt32,System.String] abstracts 'get set' : 
+    UInt64 cursor 'get set' : 
+    UInt64 count 'get set' : 
+    UInt64 remainder 'get set' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get set' : 
+  Methods:
+    get_matches(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_matches(Dictionary`2): PrivateScope, Public, HideBySig, SpecialName
+    get_summary(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_summary(String): PrivateScope, Public, HideBySig, SpecialName
+    get_session(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_session(Guid): PrivateScope, Public, HideBySig, SpecialName
+    get_abstracts(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_abstracts(Dictionary`2): PrivateScope, Public, HideBySig, SpecialName
+    get_cursor(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_cursor(UInt64): PrivateScope, Public, HideBySig, SpecialName
+    get_count(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_count(UInt64): PrivateScope, Public, HideBySig, SpecialName
+    get_remainder(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_remainder(UInt64): PrivateScope, Public, HideBySig, SpecialName
+    get_messages(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_messages(Dictionary`2): PrivateScope, Public, HideBySig, SpecialName
+    AddWarning(String): PrivateScope, Public, HideBySig
+    AddError(String): PrivateScope, Public, HideBySig
+Class QuelleHMI.QSearchFragment: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(QuelleHMI.Fragments.IQuelleSearchFragment): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Fragments.IQuelleSearchFragment
+  Properties:
+    Byte adjacency 'get set' : 
+    Byte group 'get set' : 
+    QuelleHMI.Tokens.IQuelleFeatureSpec[] specifications 'get set' : 
+    System.String text 'get set' : 
+  Methods:
+    get_adjacency(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_group(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_specifications(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_specifications(IQuelleFeatureSpec[]): PrivateScope, Public, HideBySig, SpecialName
+    get_text(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_text(String): PrivateScope, Public, HideBySig, SpecialName
+Class QuelleHMI.QWebClient: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Interop.IQClient
+  Methods:
+    Get(String, UInt16(Optional, HasDefault)): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Post(String, Byte[], String, UInt16(Optional, HasDefault)): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Interface QuelleHMI.ISearchProviderAsync: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Methods:
+    SearchAsync(QRequestSearch): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    PageAsync(QRequestPage): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    TestAsync(String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Interface QuelleHMI.ISearchProvider: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Methods:
+    Search(QRequestSearch): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Page(QRequestPage): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Test(String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class QuelleHMI.AbstractQuelleSearchResult: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuelleSearchResult
+  Properties:
+    System.Collections.Generic.Dictionary`2[System.Byte,System.Collections.Generic.Dictionary`2[System.Byte,System.UInt16[]]] matches 'get ' : 
+    System.String summary 'get ' : 
+    System.Guid session 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.UInt32,System.String] abstracts 'get ' : 
+    UInt64 cursor 'get ' : 
+    UInt64 count 'get ' : 
+    UInt64 remainder 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get set' : 
+  Methods:
+    get_matches(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_summary(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_session(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_abstracts(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_cursor(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_count(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_remainder(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_messages(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_messages(Dictionary`2): PrivateScope, Public, HideBySig, SpecialName
+    AddWarning(String): PrivateScope, Public, HideBySig
+    AddError(String): PrivateScope, Public, HideBySig
+Class QuelleHMI.AbstractQuellePageResult: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.IQuellePageResult
+  Properties:
+    System.String result 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get ' : 
+  Methods:
+    get_result(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_messages(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class QuelleHMI.AbstractQuelleSearchProvider: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Methods:
+    Search(QRequestSearch): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Page(QRequestPage): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Test(String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class QuelleHMI.InstantiatedQuelleSearchProvider: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(QuelleHMI.AbstractQuelleSearchProvider): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.ISearchProvider
+  Methods:
+    Search(QRequestSearch): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Page(QRequestPage): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Test(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Interface QuelleHMI.ISearchProviderVanilla: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Methods:
+    Search(IQuelleSearchRequest): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Page(IQuellePageRequest): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Test(String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class QuelleHMI.SearchProviderClient: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(QuelleHMI.ISearchProvider): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.ISearchProvider
+  Properties:
+    QuelleHMI.ISearchProvider api 'get set' : 
+    QuelleHMI.ISearchProviderVanilla vanilla 'get set' : 
+  Methods:
+    get_api(): PrivateScope, Public, HideBySig, SpecialName
+    get_vanilla(): PrivateScope, Public, HideBySig, SpecialName
+    Search(QRequestSearch): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Page(QRequestPage): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Status(): PrivateScope, Public, HideBySig
+    Test(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Interface QuelleHMI.IQuelleSearchRequest: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    QuelleHMI.Actions.IQuelleSearchClause[] clauses 'get ' : 
+    QuelleHMI.Definitions.IQuelleSearchControls controls 'get ' : 
+    System.Guid session 'get ' : 
+    UInt64 cursor 'get ' : 
+    UInt64 count 'get ' : 
+  Methods:
+    get_clauses(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_controls(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_session(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_cursor(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_count(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Interface QuelleHMI.IQuelleSearchResult: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.Collections.Generic.Dictionary`2[System.Byte,System.Collections.Generic.Dictionary`2[System.Byte,System.UInt16[]]] matches 'get ' : 
+    System.String summary 'get ' : 
+    System.Guid session 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.UInt32,System.String] abstracts 'get ' : 
+    UInt64 cursor 'get ' : 
+    UInt64 count 'get ' : 
+    UInt64 remainder 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get ' : 
+  Methods:
+    get_matches(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_summary(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_session(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_abstracts(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_cursor(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_count(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_remainder(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_messages(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Interface QuelleHMI.IQuellePageRequest: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.Guid session 'get ' : 
+    System.String format 'get ' : 
+    UInt64 page 'get ' : 
+  Methods:
+    get_session(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_format(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_page(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Interface QuelleHMI.IQuellePageResult: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String result 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.String]] messages 'get ' : 
+  Methods:
+    get_result(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_messages(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Interface QuelleHMI.IQuelleHelp: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Methods:
+    Help(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Help(String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class QuelleHMI.XGen: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Fields:
+    System.String[] InterfaceSuffixes : Public, Static, InitOnly
+    System.Type[] Interfaces : Public, Static
+    System.Type[] Enumerations : Public, Static
+    System.Type[] OtherTypes : Public, Static
+    System.String InterfacePrefix = IQuelle : Public, Static, Literal, HasDefault
+  Methods:
+    Factory(String): PrivateScope, Public, Static, HideBySig
+    export(String, Int32(Optional, HasDefault)): PrivateScope, Public, HideBySig
+Interface QuelleHMI.Interop.IQClient: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Methods:
+    Get(String, UInt16(Optional, HasDefault)): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Post(String, Byte[], String, UInt16(Optional, HasDefault)): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class QuelleHMI.Fragments.PrimativeFragment: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Fragment
+    Void .ctor(QuelleHMI.Actions.Action, System.String, Byte, Byte): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+Interface QuelleHMI.Fragments.IQuelleSearchFragment: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    Byte adjacency 'get ' : 
+    Byte group 'get ' : 
+    QuelleHMI.Tokens.IQuelleFeatureSpec[] specifications 'get ' : 
+    System.String text 'get ' : 
+  Methods:
+    get_adjacency(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_group(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_specifications(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_text(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Fragments.SearchFragment: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Fragment
+    Void .ctor(QuelleHMI.Actions.Action, System.String, Boolean, Byte, Byte): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Fragments.IQuelleSearchFragment
+  Properties:
+    QuelleHMI.Tokens.IQuelleFeatureSpec[] specifications 'get set' : 
+  Methods:
+    get_specifications(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_specifications(IQuelleFeatureSpec[]): PrivateScope, Public, HideBySig, SpecialName
+Interface QuelleHMI.Tokens.IQuelleFeature: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    Boolean searchable 'get ' : 
+    Boolean not 'get ' : 
+    System.String feature 'get ' : 
+    Byte type  'get ' : 
+    Byte subtype 'get ' : 
+    System.Collections.Generic.List`1[System.UInt16] featureMatchVector 'get ' : 
+    UInt32 discretePOS 'get ' : 
+  Methods:
+    get_searchable(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_not(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_feature(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    isMatch(UInt32): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    get_type(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_subtype(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_featureMatchVector(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_discretePOS(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Tokens.Feature: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Tokens.IQuelleFeature
+  Properties:
+    Boolean searchable 'get set' : 
+    Boolean not 'get set' : 
+    System.String feature 'get set' : 
+    System.Collections.Generic.List`1[System.UInt16] featureMatchVector 'get set' : 
+    Byte type  'get set' : 
+    Byte subtype 'get set' : 
+    UInt32 discretePOS 'get set' : 
+  Methods:
+    get_searchable(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_searchable(Boolean): PrivateScope, Public, HideBySig, SpecialName
+    get_not(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_not(Boolean): PrivateScope, Public, HideBySig, SpecialName
+    get_feature(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_feature(String): PrivateScope, Public, HideBySig, SpecialName
+    get_featureMatchVector(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_featureMatchVector(List`1): PrivateScope, Public, HideBySig, SpecialName
+    get_type(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_type(Byte): PrivateScope, Public, HideBySig, SpecialName
+    get_subtype(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_subtype(Byte): PrivateScope, Public, HideBySig, SpecialName
+    get_discretePOS(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_discretePOS(UInt32): PrivateScope, Public, HideBySig, SpecialName
+    isMatch(UInt32): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Interface QuelleHMI.Tokens.IQuelleFeatureMatch: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String condition 'get ' : 
+    QuelleHMI.Tokens.IQuelleFeature[] features 'get ' : 
+  Methods:
+    get_condition(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_features(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Tokens.FeatureMatch: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Tokens.IQuelleFeatureMatch
+  Properties:
+    System.String condition 'get set' : 
+    QuelleHMI.Tokens.IQuelleFeature[] features 'get set' : 
+  Methods:
+    get_condition(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_condition(String): PrivateScope, Public, HideBySig, SpecialName
+    get_features(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_features(IQuelleFeature[]): PrivateScope, Public, HideBySig, SpecialName
+Interface QuelleHMI.Tokens.IQuelleFeatureSpec: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String matchSpec 'get ' : 
+    QuelleHMI.Tokens.IQuelleFeatureMatch[] matchAny 'get ' : 
+  Methods:
+    get_matchSpec(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_matchAny(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Tokens.FeatureSpec: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Tokens.IQuelleFeatureSpec
+  Properties:
+    System.String matchSpec 'get set' : 
+    QuelleHMI.Tokens.IQuelleFeatureMatch[] matchAny 'get set' : 
+  Methods:
+    get_matchSpec(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_matchSpec(String): PrivateScope, Public, HideBySig, SpecialName
+    get_matchAny(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_matchAny(IQuelleFeatureMatch[]): PrivateScope, Public, HideBySig, SpecialName
+Interface QuelleHMI.Definitions.IQuelleDisplayControls: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String heading 'get ' : 
+    System.String record 'get ' : 
+    System.String format 'get ' : 
+  Methods:
+    get_heading(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_record(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_format(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Definitions.CTLDisplay: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Definitions.QuelleControlConfig
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Definitions.IQuelleDisplayControls
+  Fields:
+    System.Collections.Generic.List`1[System.String] CONTROLS : Public, InitOnly
+    System.String HEADING = heading : Public, Static, Literal, HasDefault
+    System.String RECORD = record : Public, Static, Literal, HasDefault
+    System.String FORMAT = format : Public, Static, Literal, HasDefault
+  Properties:
+    System.String heading 'get set' : 
+    System.String record 'get set' : 
+    System.String format 'get set' : 
+    QuelleHMI.Definitions.IQuelleDisplayControls CreateCopy 'get ' : 
+  Methods:
+    get_heading(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_heading(String): PrivateScope, Public, HideBySig, SpecialName
+    get_record(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_record(String): PrivateScope, Public, HideBySig, SpecialName
+    get_format(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_format(String): PrivateScope, Public, HideBySig, SpecialName
+    get_CreateCopy(): PrivateScope, Public, HideBySig, SpecialName
+    Update(String, String, String): PrivateScope, Public, HideBySig
+    Update(String, String): PrivateScope, Public, Virtual, HideBySig
+Interface QuelleHMI.Definitions.IQuelleSearchControls: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String domain 'get ' : 
+    System.Nullable`1[System.UInt32] span 'get ' : 
+    System.Nullable`1[System.Boolean] exact 'get ' : 
+    System.String host 'get ' : 
+  Methods:
+    get_domain(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_span(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_exact(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_host(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Definitions.CTLSearch: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Definitions.QuelleControlConfig
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Definitions.IQuelleSearchControls
+  Fields:
+    System.Collections.Generic.List`1[System.String] CONTROLS : Public, InitOnly
+    UInt32 maxSpan = 1000 : Public, Static, Literal, HasDefault
+    UInt32 minSpan = 0 : Public, Static, Literal, HasDefault
+    UInt32 defaultSpan = 0 : Public, Static, Literal, HasDefault
+    System.String defaultDomain = Bible.AV : Public, Static, Literal, HasDefault
+    System.String defaultHost = http://127.0.0.1:7878 : Public, Static, Literal, HasDefault
+    Boolean defaultExact = False : Public, Static, Literal, HasDefault
+    System.String HOST = host : Public, Static, Literal, HasDefault
+    System.String DOMAIN = domain : Public, Static, Literal, HasDefault
+    System.String SPAN = span : Public, Static, Literal, HasDefault
+    System.String EXACT = exact : Public, Static, Literal, HasDefault
+  Properties:
+    System.String host 'get set' : 
+    System.String domain 'get set' : 
+    System.Nullable`1[System.UInt32] span 'get set' : 
+    System.Nullable`1[System.Boolean] exact 'get set' : 
+    QuelleHMI.Definitions.IQuelleSearchControls CreateCopy 'get ' : 
+  Methods:
+    get_host(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_host(String): PrivateScope, Public, HideBySig, SpecialName
+    get_domain(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_domain(String): PrivateScope, Public, HideBySig, SpecialName
+    get_span(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_span(Nullable`1): PrivateScope, Public, HideBySig, SpecialName
+    get_exact(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_exact(Nullable`1): PrivateScope, Public, HideBySig, SpecialName
+    get_CreateCopy(): PrivateScope, Public, HideBySig, SpecialName
+    Update(String, String, UInt32, Boolean): PrivateScope, Public, HideBySig
+    Update(String, String): PrivateScope, Public, Virtual, HideBySig
+Class QuelleHMI.Definitions.CTLSystem: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Definitions.QuelleControlConfig
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.List`1[System.String] CONTROLS : Public, InitOnly
+    System.String delaultHost = http://127.0.0.1/ : Public, Static, Literal, HasDefault
+    UInt32 maxIndentation = 10 : Public, Static, Literal, HasDefault
+    UInt32 minIndentation = 0 : Public, Static, Literal, HasDefault
+    UInt32 defaultIndentation = 0 : Public, Static, Literal, HasDefault
+    System.String INDENTATION = indentation : Public, Static, Literal, HasDefault
+  Properties:
+    System.Nullable`1[System.UInt32] indentation 'get set' : 
+  Methods:
+    get_indentation(): PrivateScope, Public, HideBySig, SpecialName
+    set_indentation(Nullable`1): PrivateScope, Public, HideBySig, SpecialName
+    Update(String, String): PrivateScope, Public, Virtual, HideBySig
+Class QuelleHMI.Definitions.QuelleControlConfig: AutoLayout, AnsiClass, Class, Public, Abstract
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String SEARCH = search : Public, Static, Literal, HasDefault
+    System.String DISPLAY = display : Public, Static, Literal, HasDefault
+    System.String SYSTEM = system : Public, Static, Literal, HasDefault
+  Properties:
+    QuelleHMI.Definitions.CTLSearch search 'get ' : 
+    QuelleHMI.Definitions.CTLDisplay display 'get ' : 
+    QuelleHMI.Definitions.CTLSystem system 'get ' : 
+    System.String QuelleHome 'get ' : 
+  Methods:
+    get_search(): PrivateScope, Public, Static, HideBySig, SpecialName
+    get_display(): PrivateScope, Public, Static, HideBySig, SpecialName
+    get_system(): PrivateScope, Public, Static, HideBySig, SpecialName
+    Update(String, String): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    get_QuelleHome(): PrivateScope, Public, Static, HideBySig, SpecialName
+    IsControl(String, String&(Out)): PrivateScope, Public, Static, HideBySig
+Struct QuelleHMI.Definitions.CatalogEntry: AutoLayout, AnsiClass, Class, Public, SequentialLayout, Sealed, BeforeFieldInit
+  :System.ValueType
+  Fields:
+    System.Guid md5 : Public
+    System.Collections.Generic.Dictionary`2[System.String,System.String] control : Public
+    System.Collections.Generic.HashSet`1[System.UInt64] usages : Public
+Class QuelleHMI.Definitions.History: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(UInt32, QuelleHMI.HMIStatement): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(UInt32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Definitions.IExpand
+  Fields:
+    System.Collections.Generic.Dictionary`2[System.UInt32,System.String] Review : Public, Static
+  Properties:
+    UInt32 id  'get set' : 
+    System.String label 'get ' : 
+    System.String expansion 'get set' : 
+  Methods:
+    get_id(): PrivateScope, Public, HideBySig, SpecialName
+    get_label(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_expansion(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Interface QuelleHMI.Definitions.IExpand: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String label 'get ' : 
+    System.String expansion 'get ' : 
+  Methods:
+    get_label(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_expansion(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Definitions.IEXPAND: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Methods:
+    Expand(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Definitions.Macro: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String, QuelleHMI.HMIStatement): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Definitions.IExpand
+  Properties:
+    QuelleHMI.Definitions.IQuelleSearchControls search 'get set' : 
+    QuelleHMI.Definitions.IQuelleDisplayControls display 'get set' : 
+    System.String label 'get set' : 
+    System.String expansion 'get set' : 
+  Methods:
+    get_search(): PrivateScope, Public, HideBySig, SpecialName
+    get_display(): PrivateScope, Public, HideBySig, SpecialName
+    get_label(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_expansion(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class QuelleHMI.Actions.Action: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Fields:
+    System.String verb : Public
+    System.String[] Whitespace : Public, Static, InitOnly
+  Properties:
+    System.String syntax 'get ' : 
+    System.String segment 'get set' : 
+    HMIPolarity Polarity 'get set' : 
+    Byte polarity 'get ' : 
+  Methods:
+    Parse(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    Execute(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    isImplicit(): PrivateScope, Public, HideBySig
+    isExplicit(): PrivateScope, Public, HideBySig
+    isDefined(): PrivateScope, Public, HideBySig
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    CreateAction(HMIStatement, UInt32, HMIPolarity, String): PrivateScope, Public, Static, HideBySig
+    Notify(String, String): PrivateScope, Public, HideBySig
+    get_segment(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_Polarity(): PrivateScope, Public, HideBySig, SpecialName
+    get_polarity(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    SmartSplit(String, Char): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.Control: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, UInt32, System.String, System.String, System.String, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.List`1[System.String] IMPLICIT : Public, Static, InitOnly
+    Char[] dot : Public, Static, InitOnly
+    System.String SYNTAX = CONTROL : Public, Static, Literal, HasDefault
+    System.String SET = set : Public, Static, Literal, HasDefault
+    System.String CLEAR = clear : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+    System.String controlGroup 'get set' : 
+    System.String controlName 'get set' : 
+    System.String controlValue 'get set' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    get_controlGroup(): PrivateScope, Public, HideBySig, SpecialName
+    get_controlName(): PrivateScope, Public, HideBySig, SpecialName
+    get_controlValue(): PrivateScope, Public, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    GetAction(HMIStatement, String, UInt32): PrivateScope, Public, Static, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.Control_Get: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String[] parameters : Public
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = CONTROL : Public, Static, Literal, HasDefault
+    System.String GET = @get : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(): PrivateScope, Public, Static, HideBySig
+Interface QuelleHMI.Actions.IQuelleDisplayClause: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    System.String[] specification 'get ' : 
+  Methods:
+    get_specification(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Actions.Display: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Actions.IQuelleDisplayClause
+  Fields:
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = DISPLAY : Public, Static, Literal, HasDefault
+    System.String PRINT = @print : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+    System.Collections.Generic.Dictionary`2[System.UInt64,QuelleHMI.Fragments.PrimativeFragment] fragments 'get set' : 
+    System.String[] specification 'get ' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    get_fragments(): PrivateScope, Public, HideBySig, SpecialName
+    get_specification(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.History: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String[] parameters : Public
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.Collections.Generic.List`1[System.String] IMPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = HISTORY : Public, Static, Literal, HasDefault
+    System.String REVIEW = @review : Public, Static, Literal, HasDefault
+    System.String EXPAND = invoke : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.Label: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.Collections.Generic.List`1[System.String] IMPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = LABEL : Public, Static, Literal, HasDefault
+    System.String DELETE = @delete : Public, Static, Literal, HasDefault
+    System.String SAVE = @save : Public, Static, Literal, HasDefault
+    System.String SHOW = @show : Public, Static, Literal, HasDefault
+    System.String EXPAND = execute : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+    System.String macroName 'get set' : 
+    System.String macroValue 'get set' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    get_macroName(): PrivateScope, Public, HideBySig, SpecialName
+    get_macroValue(): PrivateScope, Public, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.Search_Status: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, HMIPolarity, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = SEARCH : Public, Static, Literal, HasDefault
+    System.String STATUS = @status : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(): PrivateScope, Public, Static, HideBySig
+Interface QuelleHMI.Actions.IQuelleSearchClause: AutoLayout, AnsiClass, Class, Public, ClassSemanticsMask, Abstract
+  Properties:
+    QuelleHMI.Fragments.IQuelleSearchFragment[] fragments 'get ' : 
+    System.String segment 'get ' : 
+    Byte polarity 'get ' : 
+    Boolean quoted 'get ' : 
+  Methods:
+    get_fragments(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_segment(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_polarity(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+    get_quoted(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract, SpecialName
+Class QuelleHMI.Actions.Search: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, UInt32, HMIPolarity, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.Actions.IQuelleSearchClause
+  Fields:
+    System.Collections.Generic.List`1[System.String] IMPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = SEARCH : Public, Static, Literal, HasDefault
+    System.String FIND = find : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+    QuelleHMI.Fragments.IQuelleSearchFragment[] fragments 'get ' : 
+    Boolean quoted 'get set' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    get_fragments(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_quoted(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.Actions.System: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :QuelleHMI.Actions.Action
+    Void .ctor(QuelleHMI.HMIStatement, System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String[] parameters : Public
+    System.Collections.Generic.List`1[System.String] EXPLICIT : Public, Static, InitOnly
+    System.String SYNTAX = SYSTEM : Public, Static, Literal, HasDefault
+    System.String EXIT = @exit : Public, Static, Literal, HasDefault
+    System.String HELP = @help : Public, Static, Literal, HasDefault
+    System.String GENERATE = @generate : Public, Static, Literal, HasDefault
+    System.String REGENERATE = @generate! : Public, Static, Literal, HasDefault
+  Properties:
+    System.String syntax 'get ' : 
+  Methods:
+    get_syntax(): PrivateScope, Public, Virtual, HideBySig, SpecialName
+    Parse(): PrivateScope, Public, Virtual, HideBySig
+    Execute(): PrivateScope, Public, Virtual, HideBySig
+    Help(String): PrivateScope, Public, Static, HideBySig
+Class QuelleHMI.SearchProviderClient+QuelleSearchProvider: AutoLayout, AnsiClass, Class, NestedPublic, BeforeFieldInit
+    Void .ctor(QuelleHMI.ISearchProvider): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.ISearchProvider
+  Methods:
+    Search(QRequestSearch): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Page(QRequestPage): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Test(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Class QuelleHMI.SearchProviderClient+QuelleSearchProviderVanilla: AutoLayout, AnsiClass, Class, NestedPublic, BeforeFieldInit
+    Void .ctor(QuelleHMI.SearchProviderClient): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    QuelleHMI.ISearchProviderVanilla
+  Methods:
+    Search(IQuelleSearchRequest): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Page(IQuellePageRequest): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Test(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+Struct QuelleHMI.Actions.Action+HMIPolarity: AutoLayout, AnsiClass, Class, NestedPublic, Sealed
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    HMIPolarity NEGATIVE = -1 : Public, Static, Literal, HasDefault
+    HMIPolarity UNDEFINED = 0 : Public, Static, Literal, HasDefault
+    HMIPolarity POSITIVE = 1 : Public, Static, Literal, HasDefault
+Struct QuelleHMI.Actions.Action+HMIClauseType: AutoLayout, AnsiClass, Class, NestedPublic, Sealed
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    HMIClauseType UNDEFINED = -1 : Public, Static, Literal, HasDefault
+    HMIClauseType IMPLICIT = 0 : Public, Static, Literal, HasDefault
+    HMIClauseType EXPLICIT = 1 : Public, Static, Literal, HasDefault

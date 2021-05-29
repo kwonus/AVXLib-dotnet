@@ -32,7 +32,7 @@ public:
 			if ((bitSegment & 0x1) != 0)
 				cnt++;
 			bitSegment >>= 1;
-		} while (bitSegment != 0);
+		}	while (bitSegment != 0);
 		return cnt;
 	}
 };
