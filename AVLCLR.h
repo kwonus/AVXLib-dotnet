@@ -1,8 +1,6 @@
 #pragma once
 #pragma managed(push, off)
 #include <avx.h>
-#include <feature.h>
-#include <CLexIndex.h>
 #include <fivebitencoding.h>
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 #include <XBitArray.h>

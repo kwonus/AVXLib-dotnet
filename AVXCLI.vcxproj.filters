@@ -18,19 +18,10 @@
     <ClCompile Include="avx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AVXTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CLexIndex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="fivebitencoding.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="search.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="slicable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="XVMem.cpp">
@@ -48,9 +39,6 @@
     <ClCompile Include="XBitArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BookChapterVerseMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BookChapterVerse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -65,31 +53,10 @@
     <ClInclude Include="AVXTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CLexIndex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Feature.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FeatureSpec.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="fivebitencoding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SearchClause.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SearchControls.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SearchFragment.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SearchRequest.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="slicable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XVMem.h">
@@ -110,13 +77,13 @@
     <ClInclude Include="XBitArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BookChapterVerseMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BookChapterVerse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AVXSearchResult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CLexIndex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
