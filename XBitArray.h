@@ -6,7 +6,6 @@
 class XBitArray255
 {
 protected:
-	UINT16 directory;
 	UINT16 array[16];
 
 public:

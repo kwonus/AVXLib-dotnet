@@ -14,6 +14,9 @@ using namespace System::Collections::Generic;
 using namespace System::Diagnostics;
 using namespace QuelleHMI;
 using namespace QuelleHMI::Tokens;
+using namespace QuelleHMI::Interop;
+
+ref class AVXSearchResult;
 
 namespace AVXCLI {
 
@@ -148,8 +151,12 @@ namespace AVXCLI {
 			bool SearchClauseQuoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
 			bool SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
 			Int32 SearchUnorderedInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag);
-			Int32 SearchSequentiallyInSpan(AVWrit* &pwrit, UInt16& span, QSearchFragment^ frag);
+			Int32 SearchSequentiallyInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag);
 			bool IsMatch(const AVWrit const& writ, QSearchFragment^ frag);
 			bool IsMatch(const AVWrit const& writ, Feature^ feature);
+
+			IQuelleSearchResult^ CompileSearchRequest(QRequestSearch^ request);
+			IQuelleSearchResult^ ExecuteSearchRequest(QRequestSearch^ request, IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions);
+			IQuelleSearchResult^ CollateSearchRequest(IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions);
 	};
 }

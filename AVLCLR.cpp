@@ -309,11 +309,14 @@ namespace AVXCLI {
 				list->Add(next->value);
 		}
 	}
-	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
-	{
+	IQuelleSearchResult^ AVLCLR::CompileSearchRequest(QRequestSearch^ request) {
 		auto result = gcnew AbstractQuelleSearchResult();
 		auto additions = gcnew List<AVXSearchResult^>();
+		auto subtractions = gcnew List<AVXSearchResult^>();
 		for each (auto clause in request->clauses) {
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
+			Console::Out->WriteLine(clause->segment + ":");
+#endif
 			for each (auto fragment in clause->fragments) {
 				if (fragment->text->StartsWith("|") || fragment->text->EndsWith("|")) {
 					result->AddError("The '|' logical-or operator cannot be used without left and right operands");
@@ -352,73 +355,73 @@ namespace AVXCLI {
 						}
 					}
 				}
-				// Now we can execute the search (micro-parsing is complete)
-				//
-				UINT32 cnt = getWritCnt();
-				if (result->messages != nullptr && result->messages->Count > 0) {
-					return result;
-				}
-				else
-				{
-					BookChapterVerse bcvMatches;
-
-					for each (auto clause in request->clauses) {
-						HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
-						for each (UInt32 match in matches)
-						{
-							auto parts = (BYTE*)&match;
-							Byte b = *parts++;
-							Byte c = *parts++;
-							Byte v = *parts++;
-							bcvMatches.AddVerse(b, c, v);
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-							auto book = getBookByNum(UINT16(b));
-							Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
-							Console::Out->Write(UInt16(c).ToString() + ":");
-							Console::Out->WriteLine(UInt16(v).ToString());
-#endif
-						}
-					}
-					auto clauseResult = gcnew AVXSearchResult(bcvMatches.bcv, clause->polarity);
-					additions->Add(clauseResult);
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-					UINT16 nativeArray[17];
-					for each (auto book in clauseResult->matches) {
-						for each (auto chapter in book.Value) {
-							auto info = getBookByNum(UINT16(book.Key));
-							Console::Out->Write(gcnew String((const char*)(&(info.name))) + "[" + UInt16(book.Key).ToString() + "] ");
-							Console::Out->Write(UInt16(chapter.Key).ToString());
-
-							auto compacted = chapter.Value;
-							auto cnt = 1 + XBitArray255::CountBits(compacted[0]);
-							for (int i = 0; i < cnt; i++)
-								nativeArray[i] = compacted[i];
-							auto x = new XBitArray255(nativeArray);
-							auto test = x->CreateByteArray();
-							String^ delimiter = ":";
-							for (auto i = 0; test[i] != 0; i++) {
-								Console::Out->Write(delimiter + UInt16(test[i]).ToString());
-								delimiter = ", ";
-							}
-							Console::Out->WriteLine();
-							delete x;
-							free(test);
-						}
-					}
-#endif
-				}
 			}
 		}
+		return result;
+	}
+	IQuelleSearchResult^ AVLCLR::ExecuteSearchRequest(QRequestSearch^ request, IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
+		for each (auto clause in request->clauses) {
+			BookChapterVerse bcvMatches;
+			HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
+			for each (UInt32 match in matches)
+			{
+				auto parts = (BYTE*)&match;
+				Byte b = *parts++;
+				Byte c = *parts++;
+				Byte v = *parts++;
+				bcvMatches.AddVerse(b, c, v);
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
+				auto book = getBookByNum(UINT16(b));
+				Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
+				Console::Out->Write(UInt16(c).ToString() + ":");
+				Console::Out->WriteLine(UInt16(v).ToString());
+#endif
+			}
+			auto clauseResult = gcnew AVXSearchResult(bcvMatches.bcv, clause->polarity);
+			if (clause->polarity == '+')
+				additions->Add(clauseResult);
+			else
+				subtractions->Add(clauseResult);
+
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
+			UINT16 nativeArray[17];
+			for each (auto book in clauseResult->matches) {
+				for each (auto chapter in book.Value) {
+					auto info = getBookByNum(UINT16(book.Key));
+					Console::Out->Write(gcnew String((const char*)(&(info.name))) + "[" + UInt16(book.Key).ToString() + "] ");
+					Console::Out->Write(UInt16(chapter.Key).ToString());
+
+					auto compacted = chapter.Value;
+					auto cnt = 1 + XBitArray255::CountBits(compacted[0]);
+					for (int i = 0; i < cnt; i++)
+						nativeArray[i] = compacted[i];
+					auto x = new XBitArray255(nativeArray);
+					auto test = x->CreateByteArray();
+					String^ delimiter = ":";
+					for (auto i = 0; test[i] != 0; i++) {
+						Console::Out->Write(delimiter + UInt16(test[i]).ToString());
+						delimiter = ", ";
+					}
+					Console::Out->WriteLine();
+					delete x;
+					free(test);
+				}
+#endif
+			}
+		}
+		return result;
+	}
+	IQuelleSearchResult^ AVLCLR::CollateSearchRequest(IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
 		if (additions->Count > 0) {
-			if ((additions->Count == 1) && additions[0]->positive) {
+			unsigned int found = 0;
+			if (additions->Count == 1) {
+				found = 1;
 				additions[0]->messages = result->messages;
 				result = additions[0];
 			}
 			else {
-				unsigned int found = 0;
 				for (int i = 0; i < additions->Count; i++) {
-					if ((additions[i]->matches->Count > 0)
-					&&   additions[i]->positive) {
+					if (additions[i]->matches->Count > 0) {
 						if (++found == 1) {
 							additions[i]->messages = result->messages;
 							result = additions[i];
@@ -428,16 +431,25 @@ namespace AVXCLI {
 						}
 					}
 				}
-				if (found > 0)
-				{
-					for (int i = 0; i < additions->Count; i++) {
-						if ((additions[i]->matches->Count > 0)
-						&&  !additions[i]->positive)
-							((AVXSearchResult^)result)->Subtract(additions[i]->matches);
-					}
-				}
+			}
+			if (found && (additions[0]->matches->Count > 0))
+			{
+				for (int i = 0; i < subtractions->Count; i++)
+					if (subtractions[i]->matches->Count > 0)
+						((AVXSearchResult^)result)->Subtract(subtractions[i]->matches);
 			}
 		}
+		return result;
+	}
+	// godhead + -- "eternal power"
+	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
+	{
+		auto additions = gcnew List<AVXSearchResult^>();
+		auto subtractions = gcnew List<AVXSearchResult^>();
+		auto result = this->CompileSearchRequest(request);
+		result = this->ExecuteSearchRequest(request, result, additions, subtractions);
+		result = this->CollateSearchRequest(result, additions, subtractions);
+
 		return result;
 	}
 	IQuellePageResult^ AVLCLR::Page(QRequestPage^ request)
@@ -655,42 +667,48 @@ namespace AVXCLI {
 	{
 		bool found = false;
 		UInt16 span = controls->span;
-		AVWrit* cursor = getWrit(0);	// ignore search.domain for now
+		const AVWrit* writ = getWrit(0);	// ignore search.domain for now
+		UInt32 cursor = 0;	// ignore search.domain for now
+
 		do {
-			AVVerse& verse = getVerse(cursor->verseIdx);
+			AVVerse& verse = getVerse(writ[cursor].verseIdx);
 			bool matched = true;
-			UInt16 localspan = (span == 0) ? getVerse(cursor->verseIdx).wordCnt : span;
+			UInt16 currentspan = (span == 0) ? getVerse(writ[cursor].verseIdx).wordCnt : span;
 			for each (QSearchFragment ^ fragment in clause->fragments) {
-				matched = (this->SearchSequentiallyInSpan(cursor, localspan, fragment) >= 0);
-				if (!matched)
-					break;
+				try {
+					auto position = this->SearchSequentiallyInSpan(writ+cursor, currentspan, fragment);
+					matched = (position > 0);
+					cursor += position > 0 ? position : currentspan;
+					if (!matched)
+						break;
+				}
+				catch (...)
+				{
+					return false;
+				}
 			}
 			if (matched) {
 				UINT32 begin = *((UINT32*)&verse);
 				list->Add(begin);
-				verse = getVerse(cursor->verseIdx);
+				verse = getVerse(writ[cursor].verseIdx);
 				UINT32 end = *((UINT32*)&verse);
 				if (end != begin)
 					list->Add(end);
 			}
 			if (span == 0 && matched) { // advance to the next verse
-				while (cursor->transition & 0x30 != 0x20)
+				while (writ[cursor].transition & 0x30 != 0x20)
 					cursor ++;
 			}
-		} while ((cursor - 1)->transition != 0xF8 && cursor->transition != 0xF8);
+		}	while (cursor <= 0xC0C93);
 		return found;
 	}
-	Int32 AVLCLR::SearchSequentiallyInSpan(AVWrit*& pwrit, UInt16& span, QSearchFragment^ frag)
+	Int32 AVLCLR::SearchSequentiallyInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag)
 	{
-		for (Int32 i = 1; i <= span; i++) {
-			if (this->IsMatch(*pwrit, frag)) {
-				span -= i;
-				return i;
-			}
-			pwrit++;
-		}
-		span = 0;
-		return (Int32)-1;
+		for (Int32 i = 0; i < span; i++)
+			if (this->IsMatch(pwrit[i], frag))
+				return ++i;
+
+		return 0;
 	}
 	bool AVLCLR::SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls)
 	{

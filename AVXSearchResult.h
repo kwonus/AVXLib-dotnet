@@ -18,7 +18,7 @@ private:
     Dictionary<Byte, Dictionary<Byte, array<UInt16>^>^>^ results;
 public:
     AVXSearchResult(Dictionary<Byte, Dictionary<Byte, array<UInt16>^>^>^ results, Char polarity)
-    : positive(polarity != 0xFF) {
+    : positive(polarity == '+') {
         this->results = results;
     }
     const bool positive;
@@ -45,6 +45,14 @@ public:
                             nativeVerseBits[i] = chapter.Value[i];
                         auto incomingVerses = new XBitArray255(nativeVerseBits);    
                         collatedVerses->Add(*incomingVerses);
+                        auto cnt = collatedVerses->GetCompactBitArray(nativeVerseBits, 17);
+                        if (cnt > collatedChapter->Length) {
+                            collatedBook->Remove(chapter.Key);
+                            collatedBook[chapter.Key] = gcnew array<UInt16>(cnt);
+                        }
+                        for (int i = 0; i < cnt; i++) {
+                            collatedChapter[i] = nativeVerseBits[i];
+                        }
                     }
                 }
             }
@@ -66,7 +74,41 @@ public:
                             nativeVerseBits[i] = chapter.Value[i];
                         auto incomingVerses = new XBitArray255(nativeVerseBits);
                         collatedVerses->Subtract(*incomingVerses);
+                        collatedVerses->GetCompactBitArray(nativeVerseBits, 17);
+                        for (int i = 0; i < collatedChapter->Length; i++)
+                            collatedChapter[i] = nativeVerseBits[i];
                     }
+                }
+            }
+        }
+        // Prune the map where appropriate
+        //
+        auto bookMap = this->results;
+        Byte books[66];
+        Byte bookCnt = 0;
+        Byte chapters[255];
+        Byte chapterCnt = 0;
+
+        for each (auto bookKey in bookMap->Keys)
+            books[bookCnt++] = bookKey;
+
+        for (int b = 0; b < bookCnt; b++) {
+            auto bookKey = books[b];
+            if (this->results->ContainsKey(bookKey)) {
+                chapterCnt = 0;
+                auto chapterMap = bookMap[bookKey];
+                for each (auto chapterKey in chapterMap->Keys)
+                    chapters[chapterCnt++] = chapterKey;
+
+                for (int c = 0; c < chapterCnt; c++) {
+                    auto chapterKey = chapters[c];
+                    auto verses = chapterMap[chapterKey];
+                    if (verses == nullptr || verses[0] == 0) {
+                        chapterMap->Remove(chapterKey);
+                    }
+                }
+                if (chapterMap->Count < 1) {
+                    bookMap->Remove(bookKey);
                 }
             }
         }
