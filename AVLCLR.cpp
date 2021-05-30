@@ -315,7 +315,7 @@ namespace AVXCLI {
 		auto subtractions = gcnew List<AVXSearchResult^>();
 		for each (auto clause in request->clauses) {
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-			Console::Out->WriteLine(clause->segment + ":");
+			Console::Out->WriteLine(clause->segment + ": (compilation)");
 #endif
 			for each (auto fragment in clause->fragments) {
 				if (fragment->text->StartsWith("|") || fragment->text->EndsWith("|")) {
@@ -361,6 +361,9 @@ namespace AVXCLI {
 	}
 	IQuelleSearchResult^ AVLCLR::ExecuteSearchRequest(QRequestSearch^ request, IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
 		for each (auto clause in request->clauses) {
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
+			Console::Out->WriteLine(clause->segment + ": (execution)");
+#endif
 			BookChapterVerse bcvMatches;
 			HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
 			for each (UInt32 match in matches)
@@ -412,6 +415,9 @@ namespace AVXCLI {
 		return result;
 	}
 	IQuelleSearchResult^ AVLCLR::CollateSearchRequest(IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
+#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
+		Console::Out->WriteLine("collation:");
+#endif		
 		if (additions->Count > 0) {
 			unsigned int found = 0;
 			if (additions->Count == 1) {
