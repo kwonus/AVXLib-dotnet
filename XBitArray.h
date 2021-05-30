@@ -21,6 +21,7 @@ public:
 	void Subtract(XBitArray255& operand);
 
 	UINT16* CreateCompactBitArray();	// up to size=17 UINT16[]	// most compact // min size: 16 bits; Typical: 32 bits <= size <= 64 bits
+	BYTE GetCompactBitArraySize();
 	BYTE GetCompactBitArray(UINT16 array[], BYTE maxCnt);
 	BYTE* CreateByteArray();			// up to size=255 BYTE[]	// much less compact
 	BYTE GetBoolArray(bool array[], BYTE maxCnt);	// up to size=255 bool[]	// least compact

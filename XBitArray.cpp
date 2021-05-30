@@ -96,13 +96,22 @@ void XBitArray255::Subtract(XBitArray255& operand) {
 	}
 }
 
-UINT16* XBitArray255::CreateCompactBitArray() {	// up to size=17 UINT16[]	// most compact
-	int countSegments = 0;
+BYTE XBitArray255::GetCompactBitArraySize() {			// up to size=255 BYTE[]	// much less compact
+	BYTE countSegments = 1;
 	for (auto s = 0; s < 16; s++)
 		if (this->array[s] != 0)
 			countSegments++;
 
-	auto result = (UINT16*) malloc((1 + countSegments) * sizeof(UINT16));
+	return countSegments;
+}
+
+UINT16* XBitArray255::CreateCompactBitArray() {	// up to size=17 UINT16[]	// most compact
+	int countSegments = 1;
+	for (auto s = 0; s < 16; s++)
+		if (this->array[s] != 0)
+			countSegments++;
+
+	auto result = (UINT16*) malloc((countSegments) * sizeof(UINT16));
 	result[0] = 0;
 	BYTE cnt = 1;
 	UINT16 dir = 0x1;
@@ -118,7 +127,7 @@ UINT16* XBitArray255::CreateCompactBitArray() {	// up to size=17 UINT16[]	// mos
 }
 
 BYTE XBitArray255::GetCompactBitArray(UINT16 result[], BYTE maxCnt) {			// up to size=255 BYTE[]	// much less compact
-	int countSegments = 0;
+	int countSegments = 1;
 	for (auto s = 0; s < 16; s++)
 		if (this->array[s] != 0)
 			countSegments++;
@@ -134,7 +143,7 @@ BYTE XBitArray255::GetCompactBitArray(UINT16 result[], BYTE maxCnt) {			// up to
 		}
 		dir <<= 1;
 	}
-	return countSegments + 1;
+	return countSegments;
 }
 
 BYTE* XBitArray255::CreateByteArray() {			// up to size=255 BYTE[]	// much less compact
