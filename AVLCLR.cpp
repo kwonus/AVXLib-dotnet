@@ -797,5 +797,22 @@ namespace AVXCLI {
 
 		return result;
 	}
+	List<AVWritAbbreviated^>^ AVLCLR::GetChapter(Byte b, Byte c)
+	{
+		if (b >= 1 && b <= 66 && c >= 1)
+		{
+			AVBook& book = getBookByNum(b);
+			if (c <= book.chapterCnt)
+			{
+				AVChapter& chapter = getChapter(book.chapterIdx + c - 1);
+				auto list = gcnew List<AVWritAbbreviated^>();
+				AVWrit* writ = getWrit(chapter.writIdx);
+				for (int w = 0; w < chapter.wordCnt; w++)
+					list->Add(gcnew AVWritAbbreviated(writ[w]));
+				return list;
+			}
+		}
+		return nullptr;
+	}
 }
 

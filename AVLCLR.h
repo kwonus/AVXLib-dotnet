@@ -19,7 +19,21 @@ using namespace QuelleHMI::Interop;
 ref class AVXSearchResult;
 
 namespace AVXCLI {
+	public ref class AVWritAbbreviated
+	{
+	public:
+		const UINT16 wordKey;
+		const BYTE punc;
+		const BYTE transition;
 
+		AVWritAbbreviated(AVWrit& writ)
+			: wordKey(writ.wordKey)
+			, punc(writ.punc)
+			, transition(writ.transition)
+		{
+			;
+		}
+	};
 	/// <summary>
 	/// Summary for AVLCLR
 	/// </summary>
@@ -79,6 +93,45 @@ namespace AVXCLI {
 		{
 			release();
 		}
+		String^ GetBookByNum(Byte num) {
+			if (num >= 1 && num <= 66) {
+				AVBook& book = getBookByNum(num);
+				return gcnew String((const char*)(&(book.name)));
+			}
+			return nullptr;
+		}
+		Byte GetVerseCount(UInt16 encodedBookChapter) {
+			Byte bk = Byte(encodedBookChapter >> 8);
+			Byte ch = Byte(encodedBookChapter & 0xFF);
+			if (bk == 66 && ch == 22)
+				return 21;
+			if (bk >= 1 && bk <= 66 && ch >= 1) {
+				AVBook& book = getBookByNum(bk);
+				if (ch <= book.chapterIdx)
+					return getChapter(book.chapterIdx+1).verseIdx - getChapter(book.chapterIdx).verseIdx;
+			}
+			return 0;
+		}
+		Byte GetChapterCount(Byte num) {
+			if (num >= 1 && num <= 66) {
+				AVBook& book = getBookByNum(num);
+				return book.chapterCnt;
+			}
+			return 0;
+		}
+		Byte GetChapterIndex(Byte num) {
+			if (num >= 1 && num <= 66) {
+				AVBook& book = getBookByNum(num);
+				return book.chapterCnt;
+			}
+			return 0;
+		}
+		String^ GetLexicalEntry(UInt16 key, Byte sequence)
+		{
+			const char* lex = getLexicalEntry(key & 0x3FFF, sequence);
+			return gcnew String(lex);
+		}
+		List<AVWritAbbreviated^>^ GetChapter(Byte book, Byte chapter);
 		char* StrToChr(String^ str, char* chr, int len);
 		Tuple<List<UInt16>^, Byte, Byte, UInt32, String^>^ EncodeAny(String^ token);
 		Tuple<List<UInt16>^, Byte, Byte, String^>^ EncodeGlobalTest(UINT64 hash);
