@@ -7,6 +7,19 @@
 
 extern "C"
 {
+    //  Fixed-Length binary files:
+    const char AVTEXT[]		= "AV-Writ.dx";
+    const char AVBOOK[]		= "AV-Book.ix";
+    const char AVCHAPTER[]	= "AV-Chapter.ix";
+    const char AVVERSE[]	= "AV-Verse.ix";
+
+    //  variable-Length binary files:
+    const char AVLEXICON[]	= "AV-Lexicon.dxi";
+    const char AVLEMMA[]	= "AV-Lemma.dxi";
+    const char AVLEMMAOOV[]	= "AV-Lemma-OOV.dxi";
+    const char AVNAMES[]	= "AV-Names.dxi";
+    const char AVWCLASS[]	= "AV-WordClass.dxi";
+
 using AVWrit = struct AVWritDX
 {
     UINT64 srclang;
@@ -151,6 +164,8 @@ public:
 
 void initialize(char* folder);
 void release();
+
+#ifndef AVX_MASKED_ACCESS
 UINT32 getWritCnt();
 UINT16 getBookCnt();
 UINT32 getChapterCnt();
@@ -160,6 +175,7 @@ AVBook& getBook(UINT16 idx);
 AVBook& getBookByNum(UINT16 num);
 AVChapter& getChapter(UINT16 idx);
 AVVerse& getVerse(UINT16 idx);
+#endif
 const BYTE SEARCH = 1;	// sequence
 const BYTE DISPLAY = 2;	// sequence
 const BYTE MODERN = 3;	// sequence

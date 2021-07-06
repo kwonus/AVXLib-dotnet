@@ -1,10 +1,8 @@
 #pragma once
 #pragma managed(push, off)
+#define AVX_MASKED_ACCESS
 #include <avx.h>
 #include <fivebitencoding.h>
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-#include <XBitArray.h>
-#endif
 #pragma managed(pop)
 
 using namespace System;
@@ -16,122 +14,84 @@ using namespace QuelleHMI;
 using namespace QuelleHMI::Tokens;
 using namespace QuelleHMI::Interop;
 
+using namespace AVSDK;
+
 ref class AVXSearchResult;
 
 namespace AVXCLI {
-	public ref class AVWritAbbreviated
-	{
-	public:
-		const UINT16 wordKey;
-		const BYTE punc;
-		const BYTE transition;
 
-		AVWritAbbreviated(AVWrit& writ)
-			: wordKey(writ.wordKey)
-			, punc(writ.punc)
-			, transition(writ.transition)
-		{
-			;
-		}
-	};
 	/// <summary>
 	/// Summary for AVLCLR
 	/// </summary>
 	public ref class AVLCLR : public AbstractQuelleSearchProvider
 	{
-	private:
-		static std::unordered_map<UINT64, AVLemma*>& lemma = *getLemmaMap();
-		static std::unordered_map<UINT16, char*>& lemmaOOV = *getLemmaOovMap();
-		static std::unordered_map<UINT16, AVLexicon*>& lexicon = *getLexiconMap();
-		static std::unordered_map<UINT16, AVWordClass*>& wclass = *getWclassMap();
-		static std::unordered_map<UINT16, AVName*>& names = *getNamesMap();
-
-		static std::unordered_map<UINT16, char*>& forwardLemma = *getForwardLemmaMap();
-		static std::unordered_map<UINT64, Bucket*>& reverseLemma = *getReverseLemmaMap();
-		static std::unordered_map<UINT64, Bucket*>& reverseModern = *getReverseModernMap();
-		static std::unordered_map<UINT64, UINT16>& reverseSearch = *getReverseSearchMap();
-		static std::unordered_map<UINT64, UINT16>& reverseName = *getReverseNameMap();
-
-		static std::unordered_map<UINT64, BYTE>& boundaryMap = *getSlashBoundaryMap();   // examples: /BoV/ /BoC/ /EoB/
-		static std::unordered_map<UINT64, BYTE>& punctuationMap = *getSlashPuncMap();      // examples: /;/ /./ /?/ /'/
-		static std::unordered_map<UINT64, BYTE>& suffixMap = *getPoundWordSuffixMap(); // examples: #kjv[1] #av[1] #exact[1] #avx[2] #modern[2] #any[3] #fuzzy[3]
-		static std::unordered_map<UINT64, BYTE>& globalMap = *getPoundWordlessMap();   // examples: #diff
-
 	public:
 		static AVLCLR^ SELF = nullptr;
+		static MMWritDX11^ XWrit;
+		static IXBook^ XBook;
+		static IXChapter^ XChapter;
+		static IXVerse^ XVerse;
+
+		static array<AVSDK::Chapter^>^ Chapters;
+		static array<AVSDK::Book>^ Books;
+		static array<UInt32>^ Verses;
+
 		AVLCLR()
 		{
 			//
-			//TODO: Add the constructor code here
+			//TODO: Add the constructor code here (and get rif of hard-coded path)
 			//
 			char* path = "C:\\src\\Digital-AV\\z-series\\";
+			auto spath = gcnew String(path);
+			XWrit = gcnew AVSDK::MMWritDX11(spath);
+			XBook = gcnew AVSDK::IXBook(spath);
+			XVerse = gcnew AVSDK::IXVerse(spath);
+			XChapter = gcnew AVSDK::IXChapter(spath);
+
 			initialize(path);
 
-			SELF = this;
+			Books = XBook->books;
+			Chapters = XChapter->chapters;
+			Verses = XVerse->verses;
 
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-			//	Temporary test:
-			XBitArray255 test;
-			test.SetBit(1);
-			test.SetBit(4);
-			test.SetBit(33);
-			test.SetBit(32);
-			test.SetBit(16);
-			test.SetBit(15);
-			test.SetBit(255);
-			auto list = test.CreateByteArray();
-			String^ delimiter = "";
-			for (auto i = 0; list[i] != 0; i++) {
-				Console::Out->Write(delimiter + UInt16(list[i]).ToString());
-				delimiter = ", ";
-			}
-			Console::Out->WriteLine();
-			delete list;
-#endif
+			SELF = this;
 		}
 		~AVLCLR()
 		{
 			release();
 		}
-		String^ GetBookByNum(Byte num) {
+		static AVSDK::Book^ GetBookByNum(Byte num) {
 			if (num >= 1 && num <= 66) {
-				AVBook& book = getBookByNum(num);
-				return gcnew String((const char*)(&(book.name)));
+				return AVLCLR::XBook->books[num - 1];
 			}
 			return nullptr;
 		}
-		Byte GetVerseCount(UInt16 encodedBookChapter) {
-			Byte bk = Byte(encodedBookChapter >> 8);
-			Byte ch = Byte(encodedBookChapter & 0xFF);
-			if (bk == 66 && ch == 22)
-				return 21;
-			if (bk >= 1 && bk <= 66 && ch >= 1) {
-				AVBook& book = getBookByNum(bk);
-				if (ch <= book.chapterIdx)
-					return getChapter(book.chapterIdx+1).verseIdx - getChapter(book.chapterIdx).verseIdx;
-			}
-			return 0;
-		}
-		Byte GetChapterCount(Byte num) {
+		static String^ GetBookNameByNum(Byte num) {
 			if (num >= 1 && num <= 66) {
-				AVBook& book = getBookByNum(num);
-				return book.chapterCnt;
+				return AVLCLR::XBook->books[num - 1].name;
 			}
+			return nullptr;
+		}
+		static Byte GetVerseCount(UInt16 encodedBookChapter) {
 			return 0;
 		}
-		Byte GetChapterIndex(Byte num) {
+		static Byte GetChapterCount(Byte num) {
 			if (num >= 1 && num <= 66) {
-				AVBook& book = getBookByNum(num);
-				return book.chapterCnt;
+				return AVLCLR::XBook->books[num - 1].chapterCnt;
 			}
 			return 0;
 		}
-		String^ GetLexicalEntry(UInt16 key, Byte sequence)
+		static UInt16 GetChapterIndex(Byte num) {
+			if (num >= 1 && num <= 66) {
+				return AVLCLR::XBook->books[num - 1].chapterIdx;
+			}
+			return 0;
+		}
+		static String^ GetLexicalEntry(UInt16 key, Byte sequence)
 		{
 			const char* lex = getLexicalEntry(key & 0x3FFF, sequence);
 			return gcnew String(lex);
 		}
-		List<AVWritAbbreviated^>^ GetChapter(Byte book, Byte chapter);
 		char* StrToChr(String^ str, char* chr, int len);
 		Tuple<List<UInt16>^, Byte, Byte, UInt32, String^>^ EncodeAny(String^ token);
 		Tuple<List<UInt16>^, Byte, Byte, String^>^ EncodeGlobalTest(UINT64 hash);
@@ -155,9 +115,6 @@ namespace AVXCLI {
 		UInt64 Encode64(String^ token);
 		UInt64 Encode64(String^ token, bool normalize);
 		String^ Decode64(UInt64 hash);
-		HashSet<UInt32>^ SearchClause(QClauseSearch^ clause, QSearchControls^ controls);
-		AVVerse& verseIdxToBcv(UINT16);
-		array<Byte>^ ExpandVerseArray(array<UInt16>^ bits);
 
 		static bool StartsWith(const char* chr, String^ str)
 		{
@@ -186,7 +143,7 @@ namespace AVXCLI {
 			if (str->IndexOf('-') >= 0)	// ignore hyphens
 				return EndsWith(chr, str->Replace("-", ""));
 
-			int len = strlen(chr);
+			auto len = strlen(chr);
 			if (len < str->Length)
 				return false;
 			auto tst = chr + len - 1;
@@ -200,16 +157,26 @@ namespace AVXCLI {
 			}
 			return true;
 		}
-		private:
-			bool SearchClauseQuoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
-			bool SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls);
-			Int32 SearchUnorderedInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag);
-			Int32 SearchSequentiallyInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag);
-			bool IsMatch(const AVWrit const& writ, QSearchFragment^ frag);
-			bool IsMatch(const AVWrit const& writ, Feature^ feature);
+	private:
 
-			IQuelleSearchResult^ CompileSearchRequest(QRequestSearch^ request);
-			IQuelleSearchResult^ ExecuteSearchRequest(QRequestSearch^ request, IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions);
-			IQuelleSearchResult^ CollateSearchRequest(IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions);
+		AbstractQuelleSearchResult^ CompileSearchRequest(QRequestSearch^ request);
+		void ExecuteSearchRequest(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result);
+
+		static std::unordered_map<UINT64, AVLemma*>& lemma = *getLemmaMap();
+		static std::unordered_map<UINT16, char*>& lemmaOOV = *getLemmaOovMap();
+		static std::unordered_map<UINT16, AVLexicon*>& lexicon = *getLexiconMap();
+		static std::unordered_map<UINT16, AVWordClass*>& wclass = *getWclassMap();
+		static std::unordered_map<UINT16, AVName*>& names = *getNamesMap();
+
+		static std::unordered_map<UINT16, char*>& forwardLemma = *getForwardLemmaMap();
+		static std::unordered_map<UINT64, Bucket*>& reverseLemma = *getReverseLemmaMap();
+		static std::unordered_map<UINT64, Bucket*>& reverseModern = *getReverseModernMap();
+		static std::unordered_map<UINT64, UINT16>& reverseSearch = *getReverseSearchMap();
+		static std::unordered_map<UINT64, UINT16>& reverseName = *getReverseNameMap();
+
+		static std::unordered_map<UINT64, BYTE>& boundaryMap = *getSlashBoundaryMap();   // examples: /BoV/ /BoC/ /EoB/
+		static std::unordered_map<UINT64, BYTE>& punctuationMap = *getSlashPuncMap();      // examples: /;/ /./ /?/ /'/
+		static std::unordered_map<UINT64, BYTE>& suffixMap = *getPoundWordSuffixMap(); // examples: #kjv[1] #av[1] #exact[1] #avx[2] #modern[2] #any[3] #fuzzy[3]
+		static std::unordered_map<UINT64, BYTE>& globalMap = *getPoundWordlessMap();   // examples: #diff
 	};
 }

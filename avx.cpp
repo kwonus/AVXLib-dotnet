@@ -46,19 +46,6 @@ static std::unordered_map<UINT64, BYTE> poundWordless;   // examples: #diff
 //                                      WILDCARDS:       // examples: run* you*#modern
 //                                      COMBINATIONS:    // examples: t*#av&/pn#2ps/&#diff
 
-//  Fixed-Length binary files:
-#define AVTEXT		"AV-Writ.dx"
-#define AVBOOK		"AV-Book.ix"
-#define AVCHAPTER	"AV-Chapter.ix"
-#define AVVERSE		"AV-Verse.ix"
-
-//  variable-Length binary files:
-#define AVLEXICON	"AV-Lexicon.dxi"
-#define AVLEMMA		"AV-Lemma.dxi"
-#define AVLEMMAOOV	"AV-Lemma-OOV.dxi"
-#define AVNAMES		"AV-Names.dxi"
-#define AVWCLASS	"AV-WordClass.dxi"
-
 // Only works on intel-byte-order
 //
 inline UINT16 uint16(BYTE* buffer) {
@@ -93,12 +80,15 @@ extern "C" void release()
     reverseModern.clear();
 
     Writ.Release();
+
     Lexicon.Release();
     Lemma.Release();
     LemmaOOV.Release();
+
     allocAVBook.Release();
     allocAVChapter.Release();
     allocAVVerse.Release();
+
     allocAVName.Release();
     allocAVWordClass.Release();
 

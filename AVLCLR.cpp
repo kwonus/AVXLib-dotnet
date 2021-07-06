@@ -309,10 +309,8 @@ namespace AVXCLI {
 				list->Add(next->value);
 		}
 	}
-	IQuelleSearchResult^ AVLCLR::CompileSearchRequest(QRequestSearch^ request) {
+	AbstractQuelleSearchResult^ AVLCLR::CompileSearchRequest(QRequestSearch^ request) {
 		auto result = gcnew AbstractQuelleSearchResult();
-		auto additions = gcnew List<AVXSearchResult^>();
-		auto subtractions = gcnew List<AVXSearchResult^>();
 		for each (auto clause in request->clauses) {
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 			Console::Out->WriteLine(clause->segment + ": (compilation)");
@@ -359,65 +357,67 @@ namespace AVXCLI {
 		}
 		return result;
 	}
-	IQuelleSearchResult^ AVLCLR::ExecuteSearchRequest(QRequestSearch^ request, IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
-		for each (auto clause in request->clauses) {
+	void AVLCLR::ExecuteSearchRequest(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result) {
+		if (b < 1 || b > 66) {
+			result->AddError(b.ToString() + "is not a valid book number");
+			return;
+		}
+		else if (c < 1) {
+			result->AddError(b.ToString() + "is not a valid chapter number");
+			return;
+		}
+
+		auto book = GetBookByNum(b);
+		if (c > book->chapterCnt) {
+			result->AddError(c.ToString() + "is not a valid chapter for book number " + b.ToString());
+			return;
+		}
+
+		auto chapter = XChapter->chapters[(book->chapterIdx + c - 1)];
+
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-			Console::Out->WriteLine(clause->segment + ": (execution)");
+		Console::Out->WriteLine(clause->segment + ": (execution)");
 #endif
-			BookChapterVerse bcvMatches;
-			HashSet<UInt32>^ matches = this->SearchClause(clause, request->controls);
-			for each (UInt32 match in matches)
-			{
-				auto parts = (BYTE*)&match;
-				Byte b = *parts++;
-				Byte c = *parts++;
-				Byte v = *parts++;
-				bcvMatches.AddVerse(b, c, v);
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-				auto book = getBookByNum(UINT16(b));
-				Console::Out->Write(gcnew String((const char*)(&(book.name))) + " ");
-				Console::Out->Write(UInt16(c).ToString() + ":");
-				Console::Out->WriteLine(UInt16(v).ToString());
-#endif
+		BookChapterVerse^ bcv = gcnew BookChapterVerse();
+		bcv->SearchClause(b, c, clause, controls);
+		auto writIdx = chapter->writIdx;
+		for each (auto match in bcv)
+		{
+			Byte v = match.Key;
+			UInt16 writOffset = 0;
+			auto verseIdx = chapter->verseIdx;
+			for (int iv = 1; iv <= v; iv++) {
+				writOffset += AVLCLR::XVerse->GetWordCnt(verseIdx+iv-1);
 			}
-			auto clauseResult = gcnew AVXSearchResult(bcvMatches.bcv, clause->polarity);
-			if (clause->polarity == '+')
-				additions->Add(clauseResult);
-			else
-				subtractions->Add(clauseResult);
+			auto values = match.Value;
 
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-			UINT16 nativeArray[17];
-			for each (auto book in clauseResult->matches) {
-				for each (auto chapter in book.Value) {
-					auto info = getBookByNum(UINT16(book.Key));
-					Console::Out->Write(gcnew String((const char*)(&(info.name))) + "[" + UInt16(book.Key).ToString() + "] ");
-					Console::Out->Write(UInt16(chapter.Key).ToString());
+			for each (auto words in values)
+			{
+				Byte w = words.Key;
+				UInt64 bits = words.Value;
 
-					auto compacted = chapter.Value;
-					auto cnt = 1 + XBitArray255::CountBits(compacted[0]);
-					for (int i = 0; i < cnt; i++)
-						nativeArray[i] = compacted[i];
-					auto x = new XBitArray255(nativeArray);
-					auto test = x->CreateByteArray();
-					String^ delimiter = ":";
-					for (auto i = 0; test[i] != 0; i++) {
-						Console::Out->Write(delimiter + UInt16(test[i]).ToString());
-						delimiter = ", ";
-					}
-					Console::Out->WriteLine();
-					delete x;
-					free(test);
-				}
-#endif
+				bcv->Matched[writIdx + writOffset] |= bits;
 			}
 		}
-		return result;
+		// TODO: result->matches = bc;
 	}
-	IQuelleSearchResult^ AVLCLR::CollateSearchRequest(IQuelleSearchResult^ result, List<AVXSearchResult^>^ additions, List<AVXSearchResult^>^ subtractions) {
+#if NEVER
+	void AVLCLR::CollateSearchRequest(Byte segment, Byte b, Byte c, AbstractQuelleSearchResult^ result, Dictionary<Byte, Dictionary<Byte, UInt64>^>^ additions, Dictionary<Byte, Boolean>^ subtractions) {
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 		Console::Out->WriteLine("collation:");
-#endif		
+#endif	
+		if (request->clauses->Length > 14) {
+			result->AddError("A maximum of 14 search segments are supported by this library.");
+			return;	// currently only supports a maximum of 14 search segments
+		}
+		UInt64 fcnt = 0; // count features
+		for each (auto clause in request->clauses)
+			fcnt += clause->fragments->Length;
+		if (fcnt > 48) {
+			result->AddError("A maximum of 48 search fragments are supported by this library.");
+			return; // currently only supports a maximum of 48 search fragments
+		}
+
 		if (additions->Count > 0) {
 			unsigned int found = 0;
 			if (additions->Count == 1) {
@@ -447,15 +447,35 @@ namespace AVXCLI {
 		}
 		return result;
 	}
+#endif
 	// godhead + -- "eternal power"
 	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
 	{
-		auto additions = gcnew List<AVXSearchResult^>();
-		auto subtractions = gcnew List<AVXSearchResult^>();
 		auto result = this->CompileSearchRequest(request);
-		result = this->ExecuteSearchRequest(request, result, additions, subtractions);
-		result = this->CollateSearchRequest(result, additions, subtractions);
+		if (request->clauses->Length > 14) {
+			result->AddError("A maximum of 14 search segments are supported by this library.");
+			return result;	// currently only supports a maximum of 14 search segments
+		}
+		UInt64 fcnt = 0; // count features
+		for each (auto clause in request->clauses)
+			fcnt += clause->fragments->Length;
+		if (fcnt > 48) {
+			result->AddError("A maximum of 48 search fragments are supported by this library.");
+			return result; // currently only supports a maximum of 48 search fragments
+		}
 
+		for (Byte b = 1; b <= 66; b++) {
+			auto book = AVLCLR::GetBookByNum(b);
+			for (Byte c = 1; c <= book->chapterCnt; c++) {
+				for each (auto clause in request->clauses)
+					if (clause->polarity == '+')
+						this->ExecuteSearchRequest(b, c, clause, request->controls, result);
+
+				for each (auto clause in request->clauses)
+					if (clause->polarity == '-')
+						this->ExecuteSearchRequest(b, c, clause, request->controls, result);
+			}
+		}
 		return result;
 	}
 	IQuellePageResult^ AVLCLR::Page(QRequestPage^ request)
@@ -529,290 +549,6 @@ namespace AVXCLI {
 			return "";
 
 		return gcnew String(buffer, 0, strlen(buffer), System::Text::Encoding::ASCII);
-	}
-	AVVerse& AVLCLR::verseIdxToBcv(UINT16 idx) {
-		return getVerse(idx);
-	}
-	HashSet<UInt32>^ AVLCLR::SearchClause(QClauseSearch^ clause, QSearchControls^ controls)
-	{
-		auto list = gcnew HashSet<UInt32>();
-
-		if (clause->quoted)
-			this->SearchClauseQuoted(list, clause, controls);
-		else
-			this->SearchClauseUnquoted(list, clause, controls);
-
-		return list;
-	}
-	bool AVLCLR::IsMatch(const AVWrit const& writ, Feature^ feature)
-	{
-		if (feature->discretePOS != 0)
-			return feature->not == false
-			? writ.pos == feature->discretePOS
-			: writ.pos != feature->discretePOS;
-
-		bool slashes = feature->feature->StartsWith("/") && feature->feature->EndsWith("/") && (feature->feature->Length > 2);
-		String^ token = slashes
-			? feature->feature->Substring(1, feature->feature->Length - 2)
-			: feature->feature;
-
-		bool not = feature->not;
-
-		if (slashes) {
-			switch (feature->subtype)
-			{
-				case SLASH_BitwisePOS:	for each (UInt16 value in feature->featureMatchVector)
-											if ((value & writ.pnwc) == value)
-												return !not;
-										return not;
-				case SLASH_Puncuation:	for each (UInt16 value in feature->featureMatchVector)
-											if ((value & writ.punc) == value)
-												return !not;
-										return not;
-				case SLASH_Boundaries:	for each (UInt16 value in feature->featureMatchVector)
-											if ((value & writ.transition) == value)
-												return !not;
-										return not;
-				case SLASH_RESERVED_80:
-				case SLASH_RESERVED_40:
-				case SLASH_RESERVED_20:
-				case SLASH_RESERVED_10:
-				default:			return not;
-			}
-		}
-		else
-		{
-			// incomplete!!!
-			switch (feature->type & (FIND_Token|FIND_Lemma|FIND_GlobalTest|FIND_LANGUAGE_NUMERIC))
-			{
-				// TODO: add suffix support:
-				/*
-				* FIND_Suffix_MASK  
-				* FIND_Suffix_Exact 
-				* FIND_Suffix_Modern
-				* FIND_Suffix_Either
-				* FIND_Suffix_None  
-				*/
-				case FIND_Token:	for each (UInt16 value in feature->featureMatchVector)
-										if (value == (writ.wordKey & 0x3FFF))
-										{
-//											Console::Out->WriteLine("Found: " + feature->feature);
-											return !not;
-										}
-									return not;
-				case FIND_English:	for each (UInt16 value in feature->featureMatchVector)
-										if (value == (writ.wordKey & 0x3FFF))
-											return !not;
-									return not;
-
-				case FIND_Hebrew:	if (getVerse(writ.verseIdx).book <= 39) {
-										int i = 0;
-										auto strongs = (UINT16*)writ.srclang;
-										for (auto strongs = (UINT16*)writ.srclang; *strongs != 0; strongs++)
-											for each (UInt16 value in feature->featureMatchVector)
-											{
-												if (value == (UInt16)*strongs)
-													return !not;
-												if (++i == 4)
-													return not;
-											}
-									}
-									return not;
-				case FIND_Greek:	if (getVerse(writ.verseIdx).book >= 40) {
-										int i = 0;
-										auto strongs = (UINT16*)writ.srclang;
-										for (auto strongs = (UINT16*)writ.srclang; *strongs != 0; strongs++)
-											for each (UInt16 value in feature->featureMatchVector)
-											{
-												if (value == (UInt16)*strongs)
-													return !not;
-												if (++i == 3)
-													return not;
-											}
-									}
-									return not;
-				case FIND_Lemma:	for each (UInt16 value in feature->featureMatchVector)
-										if (value == writ.lemma)
-											return !not;
-									return not;
-				case FIND_GlobalTest: // #diff or #same // TODO: determine which one
-
-				/*case typeWordSame:*/	{
-										UINT16 key = writ.wordKey & 0x3FFF;
-										auto srch = getLexicalEntry(key, SEARCH);
-										auto mdrn = getLexicalEntry(key, MODERN);
-										auto disp = getLexicalEntry(key, DISPLAY);
-										if (srch == NULL)
-											return not;
-										else
-											return mdrn == disp ? !not : not;
-									}
-			}
-		}
-		return false;
-	}
-	bool AVLCLR::IsMatch(const AVWrit const& writ, QSearchFragment^ frag)
-	{
-		for each (auto spec in frag->specifications) {
-			bool matchedAny = false;
-			for each (auto feature in spec->matchAny) {
-				bool matchedAll = true;
-				for each (auto feature in feature->features) {
-					matchedAll = this->IsMatch(writ, (Feature^)feature);
-					if (!matchedAll)
-						break;
-				}
-				matchedAny = matchedAll;
-			}
-			if (matchedAny)
-				return true;
-		}
-		return false;
-	}
-	bool AVLCLR::SearchClauseQuoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls)
-	{
-		bool found = false;
-		UInt16 span = controls->span;
-		const AVWrit* writ = getWrit(0);	// ignore search.domain for now
-		UInt32 cursor = 0;	// ignore search.domain for now
-
-		do {
-			AVVerse& verse = getVerse(writ[cursor].verseIdx);
-			bool matched = true;
-			UInt16 currentspan = (span == 0) ? getVerse(writ[cursor].verseIdx).wordCnt : span;
-			for each (QSearchFragment ^ fragment in clause->fragments) {
-				try {
-					auto position = this->SearchSequentiallyInSpan(writ+cursor, currentspan, fragment);
-					matched = (position > 0);
-					cursor += position > 0 ? position : currentspan;
-					if (!matched)
-						break;
-				}
-				catch (...)
-				{
-					return false;
-				}
-			}
-			if (matched) {
-				UINT32 begin = *((UINT32*)&verse);
-				list->Add(begin);
-				verse = getVerse(writ[cursor].verseIdx);
-				UINT32 end = *((UINT32*)&verse);
-				if (end != begin)
-					list->Add(end);
-			}
-			if (span == 0 && matched) { // advance to the next verse
-				while (writ[cursor].transition & 0x30 != 0x20)
-					cursor ++;
-			}
-		}	while (cursor <= 0xC0C93);
-		return found;
-	}
-	Int32 AVLCLR::SearchSequentiallyInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag)
-	{
-		for (Int32 i = 0; i < span; i++)
-			if (this->IsMatch(pwrit[i], frag))
-				return ++i;
-
-		return 0;
-	}
-	bool AVLCLR::SearchClauseUnquoted(HashSet<UInt32>^ list, QClauseSearch^ clause, QSearchControls^ controls)
-	{
-		bool found = false;
-		UInt16 span = controls->span;
-		AVWrit* cursor = getWrit(0);	// ignore search.domain for now
-		do {
-			AVVerse& verse = getVerse(cursor->verseIdx);
-			bool matched = true;
-			UInt16 localspan = (span == 0) ? getVerse(cursor->verseIdx).wordCnt : span;
-			for each (QSearchFragment ^ fragment in clause->fragments) {
-				matched = (this->SearchUnorderedInSpan(cursor, localspan, fragment) >= 0);
-				if (!matched)
-					break;
-				else if (!found)
-					found = true;
-			}
-			if (matched) {
-				UINT32 begin = *((UINT32*)&verse);
-				list->Add(begin);
-				verse = getVerse(cursor->verseIdx);
-				UINT32 end = *((UINT32*)&verse);
-				if (end != begin)
-					list->Add(end);
-			}
-			cursor += localspan;
-			if ((cursor->transition & 0x30) != 0x20) {
-				auto transition = (UInt16)((cursor - 1)->transition);
-			}
-			if (span == 0 && matched) { // advance to the next verse
-				while (cursor->transition & 0x30 != 0x20)
-					cursor++;
-			}
-		}	while (((cursor-1)->transition & 0xF8) != 0xF8 && (cursor->transition & 0xF8) != 0xF8);
-		return found;
-	}
-	Int32 AVLCLR::SearchUnorderedInSpan(const AVWrit* pwrit, UInt16 span, QSearchFragment^ frag)
-	{
-		for (Int32 i = 0; i < span; i++)
-			if (this->IsMatch(pwrit[i], frag))
-				return i;
-		return (Int32) -1;
-	}
-	// see XBitArray::CreateByteArray() for reference, but this method has different implementation and is dotnet
-	array<Byte>^ AVLCLR::ExpandVerseArray(array<UInt16>^ bits) {
-		if (bits == nullptr || bits->Length < 1)
-			return nullptr;
-
-		BYTE cnt = 0;
-		if (bits[0] != 0)
-			for (auto s = 1; s < bits->Length; s++)
-				cnt += XBitArray255::CountBits(bits[s]);
-
-		auto result = gcnew array<Byte>(cnt);
-		if (cnt == 0)
-			return result;
-
-		BYTE baseline = 0;
-		BYTE current = 0;
-		BYTE idx = 0;
-		BYTE index = 0;
-		UInt16 bitSegment = bits[0];
-		do {
-			if ((bitSegment & 0x1) != 0) {
-				for (UINT16 bit = 0x1; bit != 0; bit <<= 1) {
-					if ((bits[current] & bit) != 0) {
-						BYTE value = 1 + baseline;
-						result[idx++] = value;
-					}
-					baseline++;
-				}
-				current++;
-			}
-			else {
-				baseline += 16;
-			}
-			bitSegment >>= 1;
-			index++;
-		}	while (bitSegment != 0);
-
-		return result;
-	}
-	List<AVWritAbbreviated^>^ AVLCLR::GetChapter(Byte b, Byte c)
-	{
-		if (b >= 1 && b <= 66 && c >= 1)
-		{
-			AVBook& book = getBookByNum(b);
-			if (c <= book.chapterCnt)
-			{
-				AVChapter& chapter = getChapter(book.chapterIdx + c - 1);
-				auto list = gcnew List<AVWritAbbreviated^>();
-				AVWrit* writ = getWrit(chapter.writIdx);
-				for (int w = 0; w < chapter.wordCnt; w++)
-					list->Add(gcnew AVWritAbbreviated(writ[w]));
-				return list;
-			}
-		}
-		return nullptr;
 	}
 }
 

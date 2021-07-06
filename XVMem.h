@@ -31,7 +31,7 @@ public:
     bool IsShared();
     void Release();
     bool Release(bool shared);
-    StructType* Acquire(char* name, bool writable, bool shared, UINT32 forceCnt = 0, const StructType* bodyVal = NULL, const StructType* firstVal = NULL, const StructType* lastVal = NULL);
+    StructType* Acquire(const char* name, bool writable, bool shared, UINT32 forceCnt = 0, const StructType* bodyVal = NULL, const StructType* firstVal = NULL, const StructType* lastVal = NULL);
 
     StructType* GetData();
 };
@@ -111,7 +111,7 @@ template <typename StructType> void XVMem<StructType>::Release()
     }
 }
 
-template <typename StructType> StructType* XVMem<StructType>::Acquire(char* name, bool writable, bool shared, UINT32 forceCnt, const StructType* bodyVal, const StructType* firstVal, const StructType* lastVal)
+template <typename StructType> StructType* XVMem<StructType>::Acquire(const char* name, bool writable, bool shared, UINT32 forceCnt, const StructType* bodyVal, const StructType* firstVal, const StructType* lastVal)
 {
     if (m_pvData)
         return m_pvData;

@@ -18,9 +18,6 @@
     <ClCompile Include="avx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CLexIndex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="fivebitencoding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,9 +33,6 @@
     <ClCompile Include="AVLCLR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="XBitArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BookChapterVerse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,9 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="avx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AVXTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fivebitencoding.h">
@@ -74,16 +65,10 @@
     <ClInclude Include="AVLCLR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XBitArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BookChapterVerse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AVXSearchResult.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CLexIndex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

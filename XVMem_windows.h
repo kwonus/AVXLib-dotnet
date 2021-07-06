@@ -13,7 +13,7 @@ inline char* Strncpy(char* destination, const char* name, int len) {
 #pragma warning(suppress : 4996)
     return strncpy(destination, name, len);
 }
-inline int Strnlen(const char* str, int maxlen) {
+inline size_t Strnlen(const char* str, int maxlen) {
 #pragma warning(suppress : 4996)
     return strnlen(str, maxlen);
 }
