@@ -72,9 +72,6 @@ namespace AVXCLI {
 			}
 			return nullptr;
 		}
-		static Byte GetVerseCount(UInt16 encodedBookChapter) {
-			return 0;
-		}
 		static Byte GetChapterCount(Byte num) {
 			if (num >= 1 && num <= 66) {
 				return AVLCLR::XBook->books[num - 1].chapterCnt;
@@ -160,7 +157,7 @@ namespace AVXCLI {
 	private:
 
 		AbstractQuelleSearchResult^ CompileSearchRequest(QRequestSearch^ request);
-		void ExecuteSearchRequest(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result);
+		void ExecuteSearchRequest(QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result);
 
 		static std::unordered_map<UINT64, AVLemma*>& lemma = *getLemmaMap();
 		static std::unordered_map<UINT16, char*>& lemmaOOV = *getLemmaOovMap();

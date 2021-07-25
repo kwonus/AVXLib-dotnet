@@ -1,105 +1,76 @@
 #include "BookChapterVerse.h"
 #include <AVLCLR.h>
 
+using namespace System;
+using namespace System::Linq;
+
 namespace AVXCLI {
 
-	BookChapterVerse::BookChapterVerse() : Dictionary<Byte, Dictionary<Byte, UInt32>^>() {
-		this->Matched = gcnew array<UInt64>(0xC0C93);	// this needs to be managed by Maganimity
+	BookChapterVerse::BookChapterVerse() {
+		this->Matches = gcnew HashSet<UInt64>();	// this could be managed by Maganimity
+		this->Tokens = gcnew Dictionary<UInt32, UInt64>();
 	}
 
-	bool BookChapterVerse::AddChapter(Byte b, Byte c) {
-		if (b < 1 || b > 66 || c < 1)
-			return false;
-
-		auto book = this->ContainsKey(b) ? this[b] : nullptr;
-		if (book == nullptr) {
-			book = gcnew Dictionary<Byte, UInt32>();
-			this[b] = book;
-		}
-		else if (book->ContainsKey(c))
-			return true;
-
-		AVSDK::Book^ bk = AVLCLR::GetBookByNum(b);
-		if (c > bk->chapterCnt)
-			return false;
-		AVSDK::Chapter ^ ch = AVLCLR::XChapter->chapters[bk->chapterIdx + c - 1];
-
-		book[c] = ch->writIdx;
+	bool BookChapterVerse::AddMatch(UInt16 segmentIdx, UInt32 wstart, UInt32 wlast)
+	{
+		auto encoded = SegmentElement::Create(wstart, wlast, segmentIdx);
+		if (!this->Matches->Contains(encoded))
+			this->Matches->Add(encoded);
 
 		return true;
 	}
-
-	bool BookChapterVerse::SubtractChapter(Byte b, Byte c, Byte v) {
-		if (b < 1 || b > 66 || c < 1 || v < 1)
-			return false;
-
-		auto book = this->ContainsKey(b) ? this[b] : nullptr;
-		if (book == nullptr) {
-			return true;
-		}
-		else if (!book->ContainsKey(c))
-			return true;
-
-		auto bk = AVLCLR::GetBookByNum(b);
-		if (c > bk->chapterCnt)
-			return false;
-		auto ch = AVLCLR::XChapter->chapters[bk->chapterIdx + c - 1];
-
-		if (v > ch->wordCnt)
-			return false;
-
-		auto vs = AVLCLR::XVerse->GetVerse(ch->verseIdx + v - 1);
-		auto writ = AVLCLR::XWrit->SetCursor(ch->writIdx);
-
-		bool keep = false;
-		UInt32 last = ch->writIdx + ch->wordCnt - 1;
-		for (UInt32 writIdx = ch->writIdx; writIdx <= last; writIdx++) {
-			if ((this->Matched[writIdx] & 0x00FFFFFFFFFFFFFF) != 0 && (this->Matched[writIdx] & 0xC000000000000000) == 0x4000000000000000)
-				keep = false;
-		}
-		if (!keep) {
-			book->Remove(c);
-			if (book->Count < 1)
-				this->Remove(b);
-		}
-		return !keep;
-	}
-
-	UInt32 BookChapterVerse::GetVerseCount(Byte b, Byte c) {
-		if (b < 1 || b > 66 || c < 1)
-			return 0;
-
-		auto book = this->ContainsKey(b) ? this[b] : nullptr;
-		if (book == nullptr) {
-			return 0;
-		}
-		else if (!book->ContainsKey(c))
-			return 0;
-
-		return 0;
-	}
-	Dictionary<Byte, UInt32>^ BookChapterVerse::GetVerses(Byte b, Byte c) { // hash is verse-num to writIdx for verse
-		if (b < 1 || b > 66 || c < 1)
-			return nullptr;
-
-		auto book = this->ContainsKey(b) ? this[b] : nullptr;
-		if (book == nullptr) {
-			return nullptr;
-		}
-		else if (!book->ContainsKey(c))
-			return nullptr;
-
-		return nullptr;
-	}
-
-	void BookChapterVerse::SearchClause(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls)
+	bool BookChapterVerse::AddMatch(UInt16 segmentIdx, UInt32 wstart, UInt16 wcnt)
 	{
-		auto list = gcnew BookChapterVerse();
+		auto encoded = SegmentElement::Create(wstart, wcnt, segmentIdx);
+		if (!this->Matches->Contains(encoded))
+			this->Matches->Add(encoded);
 
+		return true;
+	}
+	bool BookChapterVerse::SubtractMatch(UInt32 wstart, UInt32 wlast)
+	{
+		auto list = gcnew List<UInt64>();
+
+		for each (auto encoded in this->Matches)
+		{
+			auto estart = SegmentElement::GetStart(encoded);
+			auto elast = SegmentElement::GetStart(encoded);
+
+			if (estart >= wstart && estart <= wlast && elast <= wlast && elast >= wstart)
+				list->Add(encoded);
+		}
+		for each (auto encoded in list)
+		{
+			this->Matches->Remove(encoded);
+		}
+		return true;
+	}
+	bool BookChapterVerse::SubstractMatch(UInt32 wstart, UInt16 wcnt)
+	{
+		auto list = gcnew List<UInt64>();
+		UInt32 wlast = wstart + wcnt - 1;
+
+		for each (auto encoded in this->Matches)
+		{
+			auto estart = SegmentElement::GetStart(encoded);
+			auto elast = SegmentElement::GetStart(encoded);
+
+			if (estart >= wstart && estart <= wlast && elast <= wlast && elast >= wstart)
+				list->Add(encoded);
+		}
+		for each (auto encoded in list)
+		{
+			this->Matches->Remove(encoded);
+		}
+		return true;
+	}
+
+	void BookChapterVerse::SearchClause(QClauseSearch^ clause, QSearchControls^ controls)
+	{
 		if (clause->quoted)
-			this->SearchClauseQuoted(b, c, clause, controls);
+			this->SearchClauseQuoted(clause, controls);
 		else
-			this->SearchClauseUnquoted(b, c, clause, controls);
+			this->SearchClauseUnquoted(clause, controls);
 	}
 	bool BookChapterVerse::IsMatch(const AVSDK::Writ176 const% writ, Feature^ feature)
 	{
@@ -226,20 +197,11 @@ namespace AVXCLI {
 		}
 		return false;
 	}
-	bool BookChapterVerse::SearchClauseQuoted(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls)
+	bool BookChapterVerse::SearchClauseQuoted(QClauseSearch^ clause, QSearchControls^ controls)
 	{
-		if (b < 1 || b > 66 || c < 1)
-			return false;
-
-		auto book = AVLCLR::GetBookByNum(b);
-		if (c > book->chapterCnt)
-			return false;
-
-		auto chapter = AVLCLR::Chapters[book->chapterIdx + c - 1];
-
 		bool found = false;
 		UInt16 span = controls->span;
-		UInt32 cursor = chapter->writIdx;
+		UInt32 cursor = 0;
 		AVSDK::Writ176 writ;
 
 		while (AVLCLR::XWrit->GetRecord(cursor++, writ))
@@ -251,8 +213,8 @@ namespace AVXCLI {
 				try {
 					UInt64 bits = fragment->bit + (0x1 << clause->index);
 					auto position = this->SearchSequentiallyInSpan(bits, cursor, currentspan, fragment);
-					matched = (position > 0);
-					cursor += position > 0 ? position : currentspan;
+					matched = (position != 0xFFFFFFFF);
+					cursor += position != 0xFFFFFFFF ? position : currentspan;
 					if (!matched)
 						break;
 				}
@@ -281,7 +243,7 @@ namespace AVXCLI {
 		}
 		return found;
 	}
-	Int32 BookChapterVerse::SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
+	UInt32 BookChapterVerse::SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
 	{
 		auto cursor = writIdx;
 		AVSDK::Writ176 writ;
@@ -289,52 +251,43 @@ namespace AVXCLI {
 		for (Int32 i = 0; i < span; i++) {
 			AVLCLR::XWrit->GetRecord(cursor++, writ);
 			if (this->IsMatch(writ, frag)) {
-
-				this->Matched[writIdx] |= bits;
+				auto existing = this->Tokens->ContainsKey(writIdx) ? this->Tokens[writIdx] : UInt64(0);
+				this->Tokens[writIdx] = existing | bits;
 				return ++i;
 			}
 		}
-		return 0;
+		return 0xFFFFFFFF;
 	}
-	bool BookChapterVerse::SearchClauseUnquoted(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls)
+	bool BookChapterVerse::SearchClauseUnquoted(QClauseSearch^ clause, QSearchControls^ controls)
 	{
-		if (b < 1 || b > 66 || c < 1)
-			return false;
-
-		auto book = AVLCLR::GetBookByNum(b);
-		if (c > book->chapterCnt)
-			return false;
-
-		auto chapter = AVLCLR::Chapters[book->chapterIdx + c - 1];
-
 		UInt64 found = 0;
 		UInt16 span = controls->span;
-		auto cursor = chapter->writIdx;
+		auto cursor = 0;
+		auto verseIdx = 0;
+
 		UInt32 localspan = 0;
 		AVSDK::Writ176 prev;
 		AVSDK::Writ176 writ;
 		while (AVLCLR::XWrit->GetRecord(cursor++, writ))
 		{
+			localspan = span > 0 ? span : AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
 			UInt64 required = 0;
 			Byte f = 0;
 			for each (QSearchFragment ^ fragment in clause->fragments) {
 				UInt64 bits = (0x1 << f++) | (0x1 << 48 + clause->index);
 				required |= bits;
-				bool matched = (this->SearchUnorderedInSpan(bits, chapter->writIdx, localspan, fragment) >= 0);
+				bool matched = (this->SearchUnorderedInSpan(bits, cursor, localspan, fragment) >= 0);
 				if (matched)
 					found |= bits;
 			}
 			if (found == required) {
 				Byte begin = AVLCLR::XVerse->GetVerse(writ.verseIdx);
 				// And segment bits and polarity bits:
-				found |= (0x1 << (48 + clause->index));
 				if (clause->polarity == '-') {
-					found <<= (0x1 << 63);
-					this->SubtractChapter(b, c, begin);
+					this->SubtractMatch(cursor, localspan);
 				}
 				else if (clause->polarity == '+') {
-					found <<= (0x1 << 62);
-					this->AddChapter(b, c);
+					this->AddMatch(clause->index, cursor, localspan);
 				}
 			}
 			cursor += (localspan-1);
@@ -349,32 +302,30 @@ namespace AVXCLI {
 					break;
 			if ((writ.trans & 0xFC) == 0xFC) // EoBible
 				break;
-			/*
-			 *		THIS WOULD BE SLIGHTLY FASTER, BUT WOULD NOT MARKS ALL MATCHES
-			 *
-			 *		if (span == 0 && matched) { // advance to the next verse
-			 *			while ((cursor->transition & 0x30) != 0x20)
-			 *				cursor++;
-			 *		}
-			*/
 			if ((Byte)(writ.trans & (Byte)AVSDK::Transitions::ChapterTransition) != Byte(0))
 				break;
 		}
 		return found;
 	}
-	Int32 BookChapterVerse::SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
+	// These methods used to include book, and chapter
+	// There is a missing loop that creates the moving span window
+	//
+	UInt32 BookChapterVerse::SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
 	{
-		auto cursor = writIdx;
+		UInt32 cursor = writIdx;
+		UInt32 last = cursor + span - 1;
 		AVSDK::Writ176 writ;
 
-		for (Int32 i = 0; i < span; i++) {
-			AVLCLR::XWrit->GetRecord(cursor++, writ);
+		for (Int32 i = 0; cursor <= last; cursor++, i++) {
+			AVLCLR::XWrit->GetRecord(cursor, writ);
 			if (this->IsMatch(writ, frag)) {
-
-				this->Matched[writIdx] |= bits;
-				return ++i;
+				if (this->Tokens->ContainsKey(cursor))
+					this->Tokens[cursor] |= bits;
+				else
+					this->Tokens[cursor] = bits;
+				return i;
 			}
 		}
-		return 0;
+		return 0xFFFFFFFF;
 	}
 }

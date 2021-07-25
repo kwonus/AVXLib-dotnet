@@ -14,7 +14,6 @@ XVMem<AVVerse> allocAVVerse;
 XVMem<BYTE> allocAVName;
 XVMem<BYTE> allocAVWordClass;
 
-
 static AVWrit*	 writ;		// [1+0xC0C93];
 static AVBook*	 books;		// [66];
 static AVChapter*chapters;	// [1+0x4A4];

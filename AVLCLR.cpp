@@ -357,125 +357,39 @@ namespace AVXCLI {
 		}
 		return result;
 	}
-	void AVLCLR::ExecuteSearchRequest(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result) {
-		if (b < 1 || b > 66) {
-			result->AddError(b.ToString() + "is not a valid book number");
-			return;
-		}
-		else if (c < 1) {
-			result->AddError(b.ToString() + "is not a valid chapter number");
-			return;
-		}
-
-		auto book = GetBookByNum(b);
-		if (c > book->chapterCnt) {
-			result->AddError(c.ToString() + "is not a valid chapter for book number " + b.ToString());
-			return;
-		}
-
-		auto chapter = XChapter->chapters[(book->chapterIdx + c - 1)];
-
+	void AVLCLR::ExecuteSearchRequest(QClauseSearch^ clause, QSearchControls^ controls, AbstractQuelleSearchResult^ result) {
 #ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
 		Console::Out->WriteLine(clause->segment + ": (execution)");
 #endif
 		BookChapterVerse^ bcv = gcnew BookChapterVerse();
-		bcv->SearchClause(b, c, clause, controls);
-		auto writIdx = chapter->writIdx;
-		for each (auto match in bcv)
-		{
-			Byte v = match.Key;
-			UInt16 writOffset = 0;
-			auto verseIdx = chapter->verseIdx;
-			for (int iv = 1; iv <= v; iv++) {
-				writOffset += AVLCLR::XVerse->GetWordCnt(verseIdx+iv-1);
-			}
-			auto values = match.Value;
-
-			for each (auto words in values)
-			{
-				Byte w = words.Key;
-				UInt64 bits = words.Value;
-
-				bcv->Matched[writIdx + writOffset] |= bits;
-			}
-		}
-		// TODO: result->matches = bc;
+		bcv->SearchClause(clause, controls);
+		result->segments = bcv->Matches;
+		result->tokens = bcv->Tokens;
 	}
-#if NEVER
-	void AVLCLR::CollateSearchRequest(Byte segment, Byte b, Byte c, AbstractQuelleSearchResult^ result, Dictionary<Byte, Dictionary<Byte, UInt64>^>^ additions, Dictionary<Byte, Boolean>^ subtractions) {
-#ifdef AVX_EXTRA_DEBUG_DIAGNOSTICS
-		Console::Out->WriteLine("collation:");
-#endif	
-		if (request->clauses->Length > 14) {
-			result->AddError("A maximum of 14 search segments are supported by this library.");
-			return;	// currently only supports a maximum of 14 search segments
-		}
-		UInt64 fcnt = 0; // count features
-		for each (auto clause in request->clauses)
-			fcnt += clause->fragments->Length;
-		if (fcnt > 48) {
-			result->AddError("A maximum of 48 search fragments are supported by this library.");
-			return; // currently only supports a maximum of 48 search fragments
-		}
-
-		if (additions->Count > 0) {
-			unsigned int found = 0;
-			if (additions->Count == 1) {
-				found = 1;
-				additions[0]->messages = result->messages;
-				result = additions[0];
-			}
-			else {
-				for (int i = 0; i < additions->Count; i++) {
-					if (additions[i]->matches->Count > 0) {
-						if (++found == 1) {
-							additions[i]->messages = result->messages;
-							result = additions[i];
-						}
-						else {
-							((AVXSearchResult^)result)->Add(additions[i]->matches);
-						}
-					}
-				}
-			}
-			if (found && (additions[0]->matches->Count > 0))
-			{
-				for (int i = 0; i < subtractions->Count; i++)
-					if (subtractions[i]->matches->Count > 0)
-						((AVXSearchResult^)result)->Subtract(subtractions[i]->matches);
-			}
-		}
-		return result;
-	}
-#endif
 	// godhead + -- "eternal power"
 	IQuelleSearchResult^ AVLCLR::Search(QRequestSearch^ request)
 	{
 		auto result = this->CompileSearchRequest(request);
-		if (request->clauses->Length > 14) {
+		if (request->clauses->Length > UInt16::MaxValue) {
 			result->AddError("A maximum of 14 search segments are supported by this library.");
 			return result;	// currently only supports a maximum of 14 search segments
 		}
 		UInt64 fcnt = 0; // count features
 		for each (auto clause in request->clauses)
 			fcnt += clause->fragments->Length;
-		if (fcnt > 48) {
-			result->AddError("A maximum of 48 search fragments are supported by this library.");
-			return result; // currently only supports a maximum of 48 search fragments
+		if (fcnt > 64) {
+			result->AddError("A maximum of 64 search fragments are supported by this library.");
+			return result; // currently only supports a maximum of 64 search fragments
 		}
 
-		for (Byte b = 1; b <= 66; b++) {
-			auto book = AVLCLR::GetBookByNum(b);
-			for (Byte c = 1; c <= book->chapterCnt; c++) {
-				for each (auto clause in request->clauses)
-					if (clause->polarity == '+')
-						this->ExecuteSearchRequest(b, c, clause, request->controls, result);
+		for each (auto clause in request->clauses)
+			if (clause->polarity == '+')
+				this->ExecuteSearchRequest(clause, request->controls, result);
 
-				for each (auto clause in request->clauses)
-					if (clause->polarity == '-')
-						this->ExecuteSearchRequest(b, c, clause, request->controls, result);
-			}
-		}
+		for each (auto clause in request->clauses)
+			if (clause->polarity == '-')
+				this->ExecuteSearchRequest(clause, request->controls, result);
+
 		return result;
 	}
 	IQuellePageResult^ AVLCLR::Page(QRequestPage^ request)

@@ -12,23 +12,24 @@ using namespace QuelleHMI::Tokens;
 using namespace QuelleHMI::Interop;
 
 namespace AVXCLI {
-	public ref class BookChapterVerse : public Dictionary<Byte, Dictionary<Byte, UInt32>^> // managed version of BookChapterVerseMap
+	public ref class BookChapterVerse
 	{
 	public:
-		array<UInt64>^ Matched;
+		HashSet<UInt64>^ Matches;
+		Dictionary<UInt32, UInt64>^ Tokens;
 
 		BookChapterVerse();
-		bool AddChapter(Byte b, Byte c);
-		bool SubtractChapter(Byte b, Byte c, Byte v);
-		UInt32 GetVerseCount(Byte b, Byte c);
-		Dictionary<Byte, UInt32>^ GetVerses(Byte b, Byte c);  // hash is verse-num to writIdx for verse
-		void SearchClause(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls);
+		bool AddMatch(UInt16 segmentIdx, UInt32 wstart, UInt32 wlast);
+		bool AddMatch(UInt16 segmentIdx, UInt32 wstart, UInt16 wcnt);
+		bool SubtractMatch(UInt32 wstart, UInt32 wlast);
+		bool SubstractMatch(UInt32 wstart, UInt16 wcnt);
+		void SearchClause(QClauseSearch^ clause, QSearchControls^ controls);
 
 	private:
-		bool SearchClauseQuoted(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls);
-		bool SearchClauseUnquoted(Byte b, Byte c, QClauseSearch^ clause, QSearchControls^ controls);
-		Int32 SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
-		Int32 SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
+		bool SearchClauseQuoted(QClauseSearch^ clause, QSearchControls^ controls);
+		bool SearchClauseUnquoted(QClauseSearch^ clause, QSearchControls^ controls);
+		UInt32 SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
+		UInt32 SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
 		bool IsMatch(const AVSDK::Writ176 const% writ, QSearchFragment^ frag);
 		bool IsMatch(const AVSDK::Writ176 const% writ, Feature^ feature);
 	};
