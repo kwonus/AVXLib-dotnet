@@ -26,10 +26,14 @@ namespace AVXCLI {
 		void SearchClause(QClauseSearch^ clause, QSearchControls^ controls);
 
 	private:
-		bool SearchClauseQuoted(QClauseSearch^ clause, QSearchControls^ controls);
-		bool SearchClauseUnquoted(QClauseSearch^ clause, QSearchControls^ controls);
-		UInt32 SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
-		UInt32 SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag);
+		UInt32 SearchClauseQuoted_ScopedUsingSpan(QClauseSearch^ clause, QSearchControls^ controls);
+		UInt32 SearchClauseQuoted_ScopedUsingVerse(QClauseSearch^ clause, QSearchControls^ controls);
+
+		UInt32 SearchClauseUnquoted_ScopedUsingSpan(QClauseSearch^ clause, QSearchControls^ controls);
+		UInt32 SearchClauseUnquoted_ScopedUsingVerse(QClauseSearch^ clause, QSearchControls^ controls);
+
+		UInt32 SearchUnorderedInSpan(UInt16 span, QSearchFragment^ frag);
+		UInt32 SearchSequentiallyInSpan(UInt16 span, QSearchFragment^ frag);
 		bool IsMatch(const AVSDK::Writ176 const% writ, QSearchFragment^ frag);
 		bool IsMatch(const AVSDK::Writ176 const% writ, Feature^ feature);
 	};

@@ -68,9 +68,19 @@ namespace AVXCLI {
 	void BookChapterVerse::SearchClause(QClauseSearch^ clause, QSearchControls^ controls)
 	{
 		if (clause->quoted)
-			this->SearchClauseQuoted(clause, controls);
+		{
+			if (controls->span == 0)
+				this->SearchClauseQuoted_ScopedUsingVerse(clause, controls);
+			else
+				this->SearchClauseQuoted_ScopedUsingSpan(clause, controls);
+		}
 		else
-			this->SearchClauseUnquoted(clause, controls);
+		{
+			if (controls->span == 0)
+				this->SearchClauseUnquoted_ScopedUsingVerse(clause, controls);
+			else
+				this->SearchClauseUnquoted_ScopedUsingSpan(clause, controls);
+		}
 	}
 	bool BookChapterVerse::IsMatch(const AVSDK::Writ176 const% writ, Feature^ feature)
 	{
@@ -78,6 +88,7 @@ namespace AVXCLI {
 			return feature->not == false
 			? writ.pos == feature->discretePOS
 			: writ.pos != feature->discretePOS;
+
 
 		bool slashes = feature->feature->StartsWith("/") && feature->feature->EndsWith("/") && (feature->feature->Length > 2);
 		String^ token = slashes
@@ -197,7 +208,11 @@ namespace AVXCLI {
 		}
 		return false;
 	}
-	bool BookChapterVerse::SearchClauseQuoted(QClauseSearch^ clause, QSearchControls^ controls)
+	UInt32 BookChapterVerse::SearchClauseQuoted_ScopedUsingSpan(QClauseSearch^ clause, QSearchControls^ controls)
+	{
+		return 0;
+	}
+	UInt32 BookChapterVerse::SearchClauseQuoted_ScopedUsingVerse(QClauseSearch^ clause, QSearchControls^ controls)
 	{
 		bool found = false;
 		UInt16 span = controls->span;
@@ -211,8 +226,7 @@ namespace AVXCLI {
 			UInt16 currentspan = (span == 0) ? verseWordCnt : span;
 			for each (QSearchFragment ^ fragment in clause->fragments) {
 				try {
-					UInt64 bits = fragment->bit + (0x1 << clause->index);
-					auto position = this->SearchSequentiallyInSpan(bits, cursor, currentspan, fragment);
+					auto position = this->SearchSequentiallyInSpan(currentspan, fragment);
 					matched = (position != 0xFFFFFFFF);
 					cursor += position != 0xFFFFFFFF ? position : currentspan;
 					if (!matched)
@@ -241,78 +255,157 @@ namespace AVXCLI {
 			*/
 			}
 		}
-		return found;
+		return 0;
 	}
-	UInt32 BookChapterVerse::SearchSequentiallyInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
+	UInt32 BookChapterVerse::SearchSequentiallyInSpan(UInt16 span, QSearchFragment^ frag)
 	{
-		auto cursor = writIdx;
+		auto cursor = AVLCLR::XWrit->cursor;
 		AVSDK::Writ176 writ;
 		
 		for (Int32 i = 0; i < span; i++) {
 			AVLCLR::XWrit->GetRecord(cursor++, writ);
 			if (this->IsMatch(writ, frag)) {
-				auto existing = this->Tokens->ContainsKey(writIdx) ? this->Tokens[writIdx] : UInt64(0);
-				this->Tokens[writIdx] = existing | bits;
+				auto existing = this->Tokens->ContainsKey(cursor) ? this->Tokens[cursor] : UInt64(0);
+				this->Tokens[cursor] = existing | frag->bit;
 				return ++i;
 			}
 		}
 		return 0xFFFFFFFF;
 	}
-	bool BookChapterVerse::SearchClauseUnquoted(QClauseSearch^ clause, QSearchControls^ controls)
+	UInt32 BookChapterVerse::SearchClauseUnquoted_ScopedUsingSpan(QClauseSearch^ clause, QSearchControls^ controls)
 	{
+		UInt32 matchCnt = 0;
 		UInt64 found = 0;
-		UInt16 span = controls->span;
-		auto cursor = 0;
 		auto verseIdx = 0;
 
 		UInt32 localspan = 0;
 		AVSDK::Writ176 prev;
 		AVSDK::Writ176 writ;
-		while (AVLCLR::XWrit->GetRecord(cursor++, writ))
-		{
-			localspan = span > 0 ? span : AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
-			UInt64 required = 0;
-			Byte f = 0;
-			for each (QSearchFragment ^ fragment in clause->fragments) {
-				UInt64 bits = (0x1 << f++) | (0x1 << 48 + clause->index);
-				required |= bits;
-				bool matched = (this->SearchUnorderedInSpan(bits, cursor, localspan, fragment) >= 0);
-				if (matched)
-					found |= bits;
-			}
-			if (found == required) {
-				Byte begin = AVLCLR::XVerse->GetVerse(writ.verseIdx);
-				// And segment bits and polarity bits:
-				if (clause->polarity == '-') {
-					this->SubtractMatch(cursor, localspan);
-				}
-				else if (clause->polarity == '+') {
-					this->AddMatch(clause->index, cursor, localspan);
-				}
-			}
-			cursor += (localspan-1);
-			if (!AVLCLR::XWrit->GetRecord(cursor, prev))
-				break;
-			if (!AVLCLR::XWrit->GetRecord(cursor, writ))
-				break;
+		UInt32 cursor = AVMemMap::FIRST;
+		UInt32 until = AVMemMap::FIRST;
+		UInt32 start = AVMemMap::CURRENT;
 
-			// Next 4 lines are a bit of a hack.  Still trying to figure out how cursor gets misaligned
-			while (writ.trans == 0) // Repair bug of overstepping the next verse
-				if (!AVLCLR::XWrit->GetRecord(cursor, writ))
-					break;
-			if ((writ.trans & 0xFC) == 0xFC) // EoBible
-				break;
-			if ((Byte)(writ.trans & (Byte)AVSDK::Transitions::ChapterTransition) != Byte(0))
-				break;
+		for (Byte b = 1; b <= 66; b++)
+		{
+			auto book = AVLCLR::XBook->books[b - 1];
+			auto cidx = book.chapterIdx;
+			auto ccnt = book.chapterCnt;
+			auto chapter = AVLCLR::XChapter->chapters[cidx];
+			auto chapterLast = AVLCLR::XChapter->chapters[cidx + ccnt - 1];
+
+			cursor = chapter->writIdx;
+			until = cursor + chapterLast->writIdx + chapterLast->wordCnt - 1;
+
+			UInt32 start = AVMemMap::CURRENT;
+			auto span = controls->span;
+
+			for (bool ok = AVLCLR::XWrit->GetRecord(cursor, writ); ok && (cursor <= until); ok = AVLCLR::XWrit->GetRecord(AVMemMap::NEXT, writ), cursor = AVLCLR::XWrit->cursor)
+			{
+				localspan = span > 0 ? span : AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
+				UInt64 required = 0;
+				Byte f = 0;
+				for each (QSearchFragment ^ fragment in clause->fragments) {
+					UInt64 bits = (0x1 << f++);
+					required |= bits;
+					bool matched = (this->SearchUnorderedInSpan(localspan, fragment) != 0xFFFFFFFF);
+					if (matched)
+					{
+						found |= bits;
+						if (start == AVMemMap::CURRENT)
+							start = cursor;
+					}
+				}
+				if (found == required) {
+					if (clause->polarity == '-')
+						this->SubtractMatch(start, cursor);
+					else if (clause->polarity == '+')
+						this->AddMatch(clause->index, start, cursor);
+
+					start = AVMemMap::CURRENT;
+					found = 0;
+					matchCnt++;
+				}
+				cursor += (localspan - 1);
+				AVLCLR::XWrit->SetCursor(cursor);
+				AVLCLR::XWrit->GetRecord(AVMemMap::CURRENT, writ);
+
+				// Next 4 lines are a bit of a hack.  Still trying to figure out how cursor gets misaligned
+				//while (writ.trans == 0) // Repair bug of overstepping the next verse
+					//break;
+				if ((writ.trans & (Byte)Transitions::EndOfBook) == (Byte)Transitions::EndOfBook)
+					break; // Next bbok
+//				if ((Byte)(writ.trans & (Byte) Transitions::ChapterTransition) != Byte(0))
+//					break; // Error!!!
+			}
 		}
-		return found;
+		return matchCnt;
+	}
+	UInt32 BookChapterVerse::SearchClauseUnquoted_ScopedUsingVerse(QClauseSearch^ clause, QSearchControls^ controls)
+	{
+		UInt32 matchCnt = 0;
+		UInt64 found = 0;
+		auto verseIdx = 0;
+
+		AVSDK::Writ176 prev;
+		AVSDK::Writ176 writ;
+		UInt32 start  = AVMemMap::CURRENT;
+		UInt32 cursor = AVMemMap::FIRST;
+
+		for (Byte b = 1; b <= 66; b++)
+		{
+			auto book = AVLCLR::XBook->books[b-1];
+			auto cidx = book.chapterIdx;
+			auto ccnt = book.chapterCnt;
+
+			for (auto c = cidx; c < UInt32(cidx + ccnt); c++)
+			{
+				auto chapter = AVLCLR::XChapter->chapters[c];
+				auto until = chapter->writIdx + chapter->wordCnt - 1;
+				Byte span = 0;
+				for (cursor = chapter->writIdx; cursor <= until; cursor += span)
+				{
+					if (AVLCLR::XWrit->GetRecord(cursor, writ))
+					{
+						span = AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
+						UInt64 required = 0;
+						
+						for each (QSearchFragment ^ fragment in clause->fragments) {
+							UInt64 bit = (0x1 << (fragment->bit-1));
+							required |= bit;
+							bool matched = (this->SearchUnorderedInSpan(span, fragment) != 0xFFFFFFFF);
+							if (matched)
+							{
+								found |= bit;
+								if (start == AVMemMap::CURRENT)
+									start = cursor;
+							}
+						}
+						if (found == required) {
+							if (clause->polarity == '-')
+								this->SubtractMatch(start, cursor);
+							else if (clause->polarity == '+')
+								this->AddMatch(clause->index, start, cursor);
+
+							start = AVMemMap::CURRENT;
+							found = 0;
+							matchCnt++;
+						}
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+		return matchCnt;
 	}
 	// These methods used to include book, and chapter
 	// There is a missing loop that creates the moving span window
 	//
-	UInt32 BookChapterVerse::SearchUnorderedInSpan(UInt64 bits, UInt32 writIdx, UInt16 span, QSearchFragment^ frag)
+	UInt32 BookChapterVerse::SearchUnorderedInSpan(UInt16 span, QSearchFragment^ frag)
 	{
-		UInt32 cursor = writIdx;
+		UInt32 cursor = AVLCLR::XWrit->cursor;
 		UInt32 last = cursor + span - 1;
 		AVSDK::Writ176 writ;
 
@@ -320,9 +413,9 @@ namespace AVXCLI {
 			AVLCLR::XWrit->GetRecord(cursor, writ);
 			if (this->IsMatch(writ, frag)) {
 				if (this->Tokens->ContainsKey(cursor))
-					this->Tokens[cursor] |= bits;
+					this->Tokens[cursor] |= frag->bit;
 				else
-					this->Tokens[cursor] = bits;
+					this->Tokens[cursor] = frag->bit;
 				return i;
 			}
 		}

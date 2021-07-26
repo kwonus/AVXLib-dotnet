@@ -382,6 +382,16 @@ namespace AVXCLI {
 			return result; // currently only supports a maximum of 64 search fragments
 		}
 
+		UInt64 f = 0x1;
+		for each (auto clause in request->clauses)
+			for each (auto frag in clause->fragments)
+			{
+				frag->bit = f;
+				f <<= 1;
+				if (f == 0)	// not perfectly gracefully, handle overflow; UI will not be able to display correct token (or it will be ambiguous; we only support 64 tokens
+					f = 0x1;
+			}
+
 		for each (auto clause in request->clauses)
 			if (clause->polarity == '+')
 				this->ExecuteSearchRequest(clause, request->controls, result);
