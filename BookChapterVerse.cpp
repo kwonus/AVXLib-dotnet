@@ -214,48 +214,68 @@ namespace AVXCLI {
 	}
 	UInt32 BookChapterVerse::SearchClauseQuoted_ScopedUsingVerse(QClauseSearch^ clause, QSearchControls^ controls)
 	{
-		bool found = false;
-		UInt16 span = controls->span;
-		UInt32 cursor = 0;
-		AVSDK::Writ176 writ;
+		UInt32 matchCnt = 0;
+		UInt64 found = 0;
+		auto verseIdx = 0;
 
-		while (AVLCLR::XWrit->GetRecord(cursor++, writ))
+		AVSDK::Writ176 prev;
+		AVSDK::Writ176 writ;
+		UInt32 start = AVMemMap::CURRENT;
+		UInt32 end   = AVMemMap::CURRENT;
+
+		UInt32 cursor = AVMemMap::FIRST;
+
+		for (Byte b = 1; b <= 66; b++)
 		{
-			auto verseWordCnt = AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
-			bool matched = true;
-			UInt16 currentspan = (span == 0) ? verseWordCnt : span;
-			for each (QSearchFragment ^ fragment in clause->fragments) {
-				try {
-					auto position = this->SearchSequentiallyInSpan(currentspan, fragment);
-					matched = (position != 0xFFFFFFFF);
-					cursor += position != 0xFFFFFFFF ? position : currentspan;
-					if (!matched)
-						break;
-				}
-				catch (...)
+			auto book = AVLCLR::XBook->books[b - 1];
+			auto cidx = book.chapterIdx;
+			auto ccnt = book.chapterCnt;
+
+			for (auto c = cidx; c < UInt32(cidx + ccnt); c++)
+			{
+				auto chapter = AVLCLR::XChapter->chapters[c];
+				auto until = chapter->writIdx + chapter->wordCnt - 1;
+				Byte span;
+				for (cursor = chapter->writIdx; cursor <= until; cursor += span)
 				{
-					return false;
+					start = cursor;
+					if (AVLCLR::XWrit->GetRecord(cursor, writ))
+					{
+						span = AVLCLR::XVerse->GetWordCnt(writ.verseIdx);
+						UInt64 required = 0;
+						auto matched = false;
+
+						for each (QSearchFragment ^ fragment in clause->fragments) {
+							try {
+								auto position = this->SearchSequentiallyInSpan(span, fragment);
+								matched = (position != 0xFFFFFFFF);
+								end = start + position;
+
+								if (!matched)
+									break;
+							}
+							catch (...)
+							{
+								return 0;
+							}
+						}
+						if (matched) {
+							if (clause->polarity == '-')
+								this->SubtractMatch(start, end);
+							else if (clause->polarity == '+')
+								this->AddMatch(clause->index, start, end);
+
+							matchCnt++;
+						}
+					}
+					else
+					{
+						break;
+					}
 				}
-			}
-			if (matched) {
-				Byte begin = AVLCLR::XVerse->GetVerse(writ.verseIdx);
-			/* TODO:
-			if (matched) {
-				UINT32 begin = *((UINT32*)&verse);
-				list->Add(begin);
-				verse = getVerse(writ[cursor].verseIdx);
-				UINT32 end = *((UINT32*)&verse);
-				if (end != begin)
-					list->Add(end);
-			}
-			
-			if (span == 0 && matched) { // advance to the next verse
-				while (writ[cursor - chapter->writIdx].trans & 0x30 != 0x20)
-					cursor++;
-			*/
 			}
 		}
-		return 0;
+		return matchCnt;
 	}
 	UInt32 BookChapterVerse::SearchSequentiallyInSpan(UInt16 span, QSearchFragment^ frag)
 	{
